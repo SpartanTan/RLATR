@@ -1,0 +1,6 @@
+# Target Formation IDS (array of ids). 
+# If the value is set to -1, the service should provide  all the available formations.
+int64 id
+---
+# If the requested formation id is not available (wrong id), the server will return success=false
+bool success

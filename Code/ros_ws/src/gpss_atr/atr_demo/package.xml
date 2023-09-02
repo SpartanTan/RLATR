@@ -1,0 +1,39 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format2.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="2">
+  <name>atr_demo</name>
+  <version>0.0.1</version>
+  <description>Package containing demos for the atr implementation</description>
+  <maintainer email="dean@chalmers.se">Emmanuel Dean</maintainer>
+  <license>Apache License 2.0</license>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+
+  <depend>rclcpp</depend>
+  <depend>atr_utils</depend>
+  <depend>atr_driver</depend>
+  <depend>atr_controller</depend>
+  <depend>atr_nona</depend>
+  
+  <!-- <build_depend>atr_driver</build_depend>
+  <build_depend>atr_controller</build_depend>
+
+  <exec_depend>ros2run</exec_depend>
+  <exec_depend>atr_driver</exec_depend>
+  <exec_depend>atr_controller</exec_depend> -->
+
+
+
+
+  <test_depend>ament_cmake_gmock</test_depend>
+  <test_depend>ament_cmake_gtest</test_depend>
+  <test_depend>ament_lint_auto</test_depend>
+  <test_depend>ament_lint_common</test_depend>
+  <test_depend>launch_testing_ros</test_depend>
+  <test_depend>launch_testing_ament_cmake</test_depend>
+  <test_depend>ros_testing</test_depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>

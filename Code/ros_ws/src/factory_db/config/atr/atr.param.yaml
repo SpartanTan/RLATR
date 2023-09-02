@@ -1,0 +1,9 @@
+atr_params:
+  ros__parameters:
+    # This parameter defines the total number of available ATR in the factory
+    # It is used to:
+    # 1) spawn the atr robots (atr_driver and atr_controller)
+    #     NOTE: the number of atrs and their ids should match the ones defined in atr_demo/config/atr_demo.param.yaml 
+    #      TODO: evaluate if this config file should me moved to the factory_db package
+    # 2) to dynamically generate the subscribers in the atr_factory_state module
+    atr_id_list: [1]

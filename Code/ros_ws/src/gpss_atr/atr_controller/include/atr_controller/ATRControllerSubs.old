@@ -1,0 +1,147 @@
+/*! \file
+ *
+ * \author Emmanuel Dean
+ *
+ * \version 0.1
+ * \date 13.06.2022
+ *
+ * \copyright Copyright 2022 Chalmers
+ *
+ * #### Licence
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ *
+ * #### Acknowledgment
+ *  Adapted from https://github.com/ros2-realtime-demo/atr.git
+ */
+
+//
+
+/// \file
+/// \brief This file provides an implementation for the kinematic control of the atr.
+
+#ifndef ATR_CONTROLLER_HPP_
+#define ATR_CONTROLLER_HPP_
+
+#include <cmath>
+#include <vector>
+
+#include "atr_controller/ATRControllerConfig.hpp"
+
+// Eigen
+#include <Eigen/Dense>
+#include <Eigen/StdVector>
+
+namespace atr
+{
+namespace atr_controller
+{
+#define RAD2DEG(r) ((r) * (180.0 / M_PI))
+#define DEG2RAD(r) ((r) * (M_PI / 180.0))
+
+// TODO: Move these functions to a atr_aux package or lib
+Eigen::Matrix3d Rz(double theta_rad);
+void printVector(std::vector<double> in, std::string name);
+
+/// \class This class implements a <a href="https://en.wikipedia.org/wiki/Full_state_feedback">
+///        Full State Feedback controller (FSF)</a>
+///
+///  The FSF uses the full internal state of the system to control the system in a closed loop.
+///  This controller allows to implement both a controller designed using closed loop placement
+///  techniques or a Linear Quadratic Regulator (LQR)
+
+class ATR_CONTROLLER_PUBLIC ATRController
+{
+public:
+  /// \brief Controller constructor
+  /// \param[in] feedback_matrix Feedback matrix values
+  explicit ATRController(const ATRControllerConfig& config);
+
+  /// \brief Resets the controller internal status and set variables to their default values.
+  void reset();
+
+  /// \brief Update controller output command
+  void update();
+
+  /// \brief Updates the teleop data when a teleoperation message arrives.
+  /// \param[in] ref desired atr 2D velocitz [v_x,v_y,\omega_z]_d
+  void set_teleop(std::vector<double> ref);
+
+  /// \brief Updates the sensor data when a status message arrives.
+  /// \param[in] state atr state vector [x,y,\theta_z,v_x,v_y,\omega_z]
+  void set_state(std::vector<double> state);
+
+  /// \brief Updates the command data from the controller before publishing.
+  /// \param[in] msg Command force in Newton.
+  void set_wheel_vel_command(std::vector<double> cart_force);
+
+  /// \brief Get atr teleoperation data
+  /// \return Teleoperation data
+  const std::vector<double>& get_teleop() const;
+
+  /// \brief Get atr state
+  /// \return State data
+  const std::vector<double>& get_state() const;
+
+  /// \brief Get wheel velocities command data
+  /// \return Wheel velocities command in rad/s
+  const std::vector<double>& get_wheel_vel_command() const;
+
+  const std::vector<std::array<double, 3>>& get_control_data() const;
+
+  /// \brief Get the state flag
+  /// \return True if the atr state has been updated
+  bool get_state_flag() const;
+
+  void set_feedback_matrix(std::vector<double> feedback_matrix);
+
+  const std::vector<double>& get_feedback_matrix() const;
+
+private:
+  ATR_CONTROLLER_LOCAL std::vector<std::array<double, 3>> calculate(const std::vector<double>& state,
+                                                                    const std::vector<double>& reference);
+
+  // Controller configuration parameters
+  ATRControllerConfig cfg_;
+
+  // Holds the atr full state variables
+  std::vector<double> state_;
+
+  // This is the state we will update with the teleop velocities
+  std::vector<double> desired_state_;
+
+  // Holds the atr reference values.
+  // Some values may be set by by the user and others are fixed by default
+  std::vector<double> reference_;  ///< Reference state (pose and velocities) for the controller
+                                   ///< (x,y,\theta_z,v_x,v_y,\omega_z)
+  Eigen::Affine3d ref_;
+
+  // Force command to control the inverted atr
+  std::vector<double> wheel_vel_command_;
+
+  bool got_state_flag;  ///< to monitor when we the atr state is updated in the controller
+
+  std::vector<std::array<double, 3>> control_data_;
+
+  double theta_old_;
+
+  bool init_flag;
+
+  Eigen::VectorXd xd_w_;
+
+  bool zero_flag;
+};
+
+}  // namespace atr_controller
+}  // namespace atr
+
+#endif  // ATR_CONTROLLER_HPP_

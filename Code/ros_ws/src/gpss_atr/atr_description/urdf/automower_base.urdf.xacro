@@ -1,0 +1,164 @@
+<?xml version="1.0"?>
+<!-- <robot name="automower" xmlns:xacro="http://www.ros.org/wiki/xacro"> -->
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+  <!-- Included URDF/XACRO Files -->
+  <xacro:include filename="$(find atr_description)/urdf/materials.urdf.xacro" />
+  <xacro:include filename="$(find atr_description)/urdf/parameters.urdf.xacro" />
+  <xacro:include filename="$(find atr_description)/urdf/wheel.urdf.xacro" />
+  <xacro:include filename="$(find atr_description)/urdf/swivel_wheel.urdf.xacro" />
+  <xacro:include filename="$(find atr_description)/urdf/sensorpos.urdf.xacro" />
+  <xacro:include filename="$(find atr_description)/urdf/table.urdf.xacro" />
+
+
+  <xacro:macro name="atr_robot" params="prefix">
+
+
+  <!-- 3DOF BASE LINKS -->
+
+   <link name="${prefix}base_link_axis_x"/>
+   
+    <joint name="${prefix}base_link_axis_x_joint" type="prismatic">
+      <parent link="world"/>
+      <child link="${prefix}base_link_axis_x"/>
+      <origin xyz="0 0 0.125" rpy="0 0 0"/>
+      <axis xyz="1 0 0" rpy="0 0 0" />
+      <limit lower="-100" upper="100" effort="1000" velocity="100"/>
+      <joint_properties damping="0.0" friction="0.0"/>
+    </joint>
+
+    <link name="${prefix}base_link_axis_y"/>
+   
+    <joint name="${prefix}base_link_axis_y_joint" type="prismatic">
+      <parent link="${prefix}base_link_axis_x"/>
+      <child link="${prefix}base_link_axis_y"/>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <axis xyz="0 1 0" rpy="0 0 0" />
+      <limit lower="-100" upper="100" effort="1000" velocity="100"/>
+      <joint_properties damping="0.0" friction="0.0"/>
+    </joint>
+
+    <link name="${prefix}base_link_axis_z"/>
+   
+    <joint name="${prefix}base_link_axis_z_joint" type="revolute">
+      <parent link="${prefix}base_link_axis_y"/>
+      <child link="${prefix}base_link_axis_z"/>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <axis xyz="0 0 1" rpy="0 0 0" />
+      <limit lower="-${pi}" upper="${pi}" effort="1000" velocity="100"/>
+      <joint_properties damping="0.0" friction="0.0"/>
+    </joint>
+  
+
+    <!-- ATR-LINK -->
+    <!--Actual body/chassis of the robot-->
+    <link name="${prefix}base_link">
+      <visual>
+        <origin xyz="0 0 0" rpy="0 0 ${pi/2}" />
+        <geometry>
+          <mesh filename="package://atr_description/urdf/meshes/am_chassis.stl" scale="0.001 0.001 0.001"/>
+          <box size="${base_x_size} ${base_y_size} ${base_z_size}"/>
+        </geometry>
+        <material name="DarkGreen" />
+      </visual>
+      <collision>
+        <origin xyz="0.17 0 0.08" rpy="0 0 0 " />
+        <geometry>
+          <box size="0.65 0.50 0.20"/>
+        </geometry>
+      </collision>
+      <inertial>
+        <mass value="${base_mass}" />
+        <origin xyz="0.165 0 -0.10" />
+        <!--The 3x3 rotational inertia matrix. -->
+        <xacro:box_inertia  m="${5*base_mass}" x="${base_x_size}" y="${base_y_size}" z="${base_z_size}"/>
+      </inertial>
+    </link>
+
+    <gazebo reference="${prefix}base_link">
+      <material>Gazebo/Green</material>
+      <turnGravityOff>false</turnGravityOff>
+    </gazebo>
+
+    <joint name="${prefix}base_link_joint" type="fixed">
+      <parent link="${prefix}base_link_axis_z"/>
+      <child link="${prefix}base_link"/>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <!-- <axis xyz="1 0 0" rpy="0 0 0" />
+      <limit lower="-100" upper="100" effort="1000" velocity="100"/>
+      <joint_properties damping="0.0" friction="0.0"/> -->
+    </joint>
+
+    <!-- Wheels -->
+    <xacro:wheel prefix="${prefix}" fb="back" lr="right" parent="base_link" translateY="-0.24" translateX="0.0" translateZ="0.0" wheel_radius="${wheel_radius}" wheel_height="${wheel_height}" flip="1"/>
+    <xacro:wheel prefix="${prefix}" fb="back" lr="left" parent="base_link" translateY="0.24" translateX="0.0" translateZ="0.0" wheel_radius="${wheel_radius}" wheel_height="${wheel_height}" flip="1"/>
+
+    <xacro:swivel_wheel prefix="${prefix}" fb="front" lr="right" parent="base_link" translateY="-0.16" translateX="0.355" translateZ="0.03" wheel_radius="${swivel_wheel_radius}" wheel_height="${swivel_wheel_height}" flip="0"/>
+    <xacro:swivel_wheel prefix="${prefix}" fb="front" lr="left" parent="base_link" translateY="0.16" translateX="0.355" translateZ="0.03" wheel_radius="${swivel_wheel_radius}" wheel_height="${swivel_wheel_height}" flip="0"/>
+
+    <!-- LOOP SENSORs -->
+    <xacro:sensorpos prefix="${prefix}" name="loop_front_center" parent="base_link" translateX="0.38" translateY="0.0" translateZ="-0.04"/>
+    <xacro:sensorpos prefix="${prefix}" name="loop_front_right" parent="base_link" translateX="0.38" translateY="-0.07" translateZ="-0.04"/>
+    <xacro:sensorpos prefix="${prefix}" name="loop_rear_left" parent="base_link" translateX="-0.07" translateY="0.14" translateZ="-0.04"/>
+    <xacro:sensorpos prefix="${prefix}" name="loop_rear_right" parent="base_link" translateX="-0.07" translateY="-0.14" translateZ="-0.04"/>
+
+    <!-- CONFINEMENT SENSORs -->
+    <xacro:sensorpos prefix="${prefix}" name="col_front_chassis" parent="base_link" translateX="0.55" translateY="0.0" translateZ="0.00"/>
+    <xacro:sensorpos prefix="${prefix}" name="col_front_left" parent="base_link" translateX="0.43" translateY="0.24" translateZ="0.00"/>
+    <xacro:sensorpos prefix="${prefix}" name="col_front_right" parent="base_link" translateX="0.43" translateY="-0.24" translateZ="0.00"/>
+    <xacro:sensorpos prefix="${prefix}" name="col_rear_left" parent="base_link" translateX="-0.10" translateY="0.24" translateZ="0.0"/>
+    <xacro:sensorpos prefix="${prefix}" name="col_rear_right" parent="base_link" translateX="-0.10" translateY="-0.24" translateZ="0.0"/>
+
+    <!-- TABLE -->
+    <xacro:table prefix="${prefix}" parent="base_link" translateY="-0.16" translateX="0.355" translateZ="0.03"/>
+
+    <!-- CUTTING DISC-->
+    <!--
+    <link name="cutting_disc_center">
+      <visual>
+          <origin xyz="0 0 0" rpy="0 0 0" />
+          <geometry>
+              <cylinder length="0.01" radius="0.11" />
+          </geometry>
+          <material name="Purple" />
+      </visual>
+    </link>
+
+    <gazebo reference="cutting_disc_center">
+      <turnGravityOff>false</turnGravityOff>
+    </gazebo>
+
+    <joint name="cutting_disc_center_joint" type="fixed">
+      <parent link="base_link"/>
+      <child link="cutting_disc_center" />
+    <origin xyz="0.25 0.0 -0.07" rpy="0 0 0" />
+    </joint>
+    -->
+
+
+    <!-- Antenna -->
+    <!-- <link name="antenna_center">
+      <visual>
+          <origin xyz="0 0 0" rpy="0 0 0" />
+          <geometry>
+              <cylinder length="0.01" radius="0.05" />
+          </geometry>
+          <material name="Purple" />
+      </visual>
+    </link>
+
+    <gazebo reference="antenna_center">
+      <turnGravityOff>false</turnGravityOff>
+    </gazebo>
+
+    <joint name="antenna_center_joint" type="fixed">
+      <parent link="base_link"/>
+      <child link="antenna_center" />
+    <origin xyz="0.27 0.0 0.0" rpy="0 0 0" />
+    </joint> -->
+  </xacro:macro>
+</robot>
+
+
+
+

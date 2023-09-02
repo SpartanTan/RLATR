@@ -1,0 +1,53 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+  <name>atr_driver</name>
+  <version>0.0.1</version>
+  <description>Implementation of the ROS 2 interface for the atr driver</description>
+  <maintainer email="dean@chalmers.se">Emmanuel Deab</maintainer>
+  <license>Apache License 2.0</license>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+  <buildtool_depend>ament_cmake_python</buildtool_depend>
+  
+  <depend>ament_index_cpp</depend>
+  
+  <depend>rclcpp</depend>
+  <depend>rclpy</depend>
+  <depend>rclcpp_lifecycle</depend>
+  <depend>rclcpp_components</depend>
+  <depend>rcpputils</depend>
+  
+  
+  <depend>std_msgs</depend>
+  <depend>lifecycle_msgs</depend>
+  <depend>visualization_msgs</depend>
+  <depend>sensor_msgs</depend>
+  <depend>std_srvs</depend>
+    <depend>std_stvs</depend>
+
+  
+  <depend>tf2</depend>
+  <depend>tf2_ros</depend>
+  <depend>tf2_eigen</depend>
+  <depend>tf2_geometry_msgs</depend>
+
+  
+  <depend>atr_error_msgs</depend>
+  <depend>atr_state_msgs</depend>
+  <depend>atr_srvs</depend>
+
+  <depend>atr_utils</depend>
+  
+  <test_depend>apex_test_tools</test_depend>
+  <test_depend>ament_cmake_gtest</test_depend>
+  <test_depend>ament_lint_auto</test_depend>
+  <test_depend>ament_lint_common</test_depend>
+  <test_depend>launch_testing_ros</test_depend>
+  <test_depend>launch_testing_ament_cmake</test_depend>
+  <test_depend>ros_testing</test_depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>

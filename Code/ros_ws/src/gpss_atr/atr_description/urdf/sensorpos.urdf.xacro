@@ -1,0 +1,29 @@
+<?xml version="1.0"?>
+<robot name="sensorpos" xmlns:xacro="http://www.ros.org/wiki/xacro">
+ 
+ <!-- NOTE! Must have a mass/inertial so that Gazebo does not ignore these... -->
+  <xacro:macro name="sensorpos" params="prefix name parent translateX translateY translateZ ">
+    <link name="${prefix}${name}">
+		<inertial>
+			<origin xyz="0 0 1" rpy="0 0 0"/>
+			<mass value="0.01"/>
+			<inertia
+				ixx="0.001" ixy="0.0" ixz="0.0"
+				iyy="0.001" iyz="0.0"
+				izz="0.001"/>
+		</inertial>
+    </link>
+ 
+    <gazebo reference="${prefix}${name}">
+      <turnGravityOff>true</turnGravityOff>
+      <material>Gazebo/Orange</material>
+    </gazebo>
+ 
+    <joint name="${prefix}${name}_joint" type="fixed">
+      <parent link="${prefix}${parent}"/>
+      <child link="${prefix}${name}"/>
+      <origin xyz="${translateX} ${translateY} ${translateZ}" rpy="0 0 0" /> 
+    </joint>
+    
+  </xacro:macro>
+</robot>

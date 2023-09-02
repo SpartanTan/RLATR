@@ -1,0 +1,26 @@
+# name of the node, defined by Node("name"), or name= in launch file
+# parameter_node:
+atr_factory_state:
+  ros__parameters:
+    # Topic name where the ATRState list will be published
+    topic_name: "atr_state_list"
+    
+    # Reference Frame
+    frame_id: "world"
+    
+    # List of operative ATRS.
+    # This parameter will be loaded from the factory_db package 
+    # atr_id_list: [1, 2, 3, 4]
+    
+    # Defines the elapsed time that the subscribers wait until changing the full_state flag. When an ATR stops 
+    # publishing data (odom/fused_odom), the ATR list publisher should change the data type to optom only because the 
+    # odom data is outdated and should not be considered.
+    watchdog_time: 1.0
+
+    # Sample rate for the internal publisher in ms
+    period_ms: 33
+
+    # JSON File name with the nodes and paths descriptions
+    # The paths and nodes in this file are used to simulate the initial position of the ATRs. 
+    # The nodes file description are allocated in the atr_path_generator package
+    nodes_filename: "nodes_RL.json"

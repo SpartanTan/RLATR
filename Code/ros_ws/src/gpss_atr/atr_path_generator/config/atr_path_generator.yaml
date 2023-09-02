@@ -1,0 +1,41 @@
+atr_path_generator:
+  ros__parameters:
+    # Subscriber topic name for the ATRStateList 
+    atr_list_topic_name: "atr_state_list"
+
+    # Topic name to publish the ATRPathList
+    atr_path_topic_name: "atr_path_list"
+
+    # Service name to get the ATR Formation list
+    formation_list_service_name: "get_atr_formation"
+
+    # World frame ID
+    frame_id: "world"
+
+    # Service name to get the NONA List
+    nona_list_service_name: "get_nona_list"
+
+    # Subscriber topic name to get the Object List
+    object_list_topic_name: "object_list"
+
+    # Service name for the client requesting the the path list update to the trajectory generator
+    path_list_service_name: "update_atr_path_list"
+
+    # Main thread period
+    period_ms: 1000
+
+    # Service name to update the predicted object list
+    predicted_obj_list_service_name: "update_pred_objects"
+
+    # sim time
+    use_sim_time: false
+
+    # JSON File name with the nodes and paths descriptions
+    nodes_filename: "nodes_RL.json"
+
+    # Service name to receive the job description
+    job_list_service_name: "update_atr_job_list"
+
+    # Service name to send the new path list to the trajectory generator
+    path_list_trigger_service_name: "trigger_new_path_list"
+

@@ -1,0 +1,10 @@
+# ATR Path list visualizer (Trajectory Generator)
+joy2joint_cmd_publisher:
+  ros__parameters:
+    # Topic name where the joy input will be published
+    joy_topic_name: "/joy"
+    # Topic name where the Twist info will be published
+    cmd_twist_name: "/joint_command"
+    #  Gains from joy value to twist 0.3
+    gains: [5.0, 5.0, 5.0]
+    

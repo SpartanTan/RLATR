@@ -1,0 +1,24 @@
+# Factory state's time 
+# target_time defines the number of seconds in the past for the requested factory state. 
+# If the value is set to 0, the service should provide  the current factory state.
+# For the moment this variable is not used. It will be used in the future.
+int8 target_time
+---
+# Header with Time and frame_id to track the time when the data is sent.
+# This header's time can be used to control how old the sent data is by comparing it with the header's in each message structure, e.g., HumanListStamped. 
+std_msgs/Header header
+
+# List of detected humans
+atr_human_msgs/HumanStateListStamped human_list
+
+# List of detected obstacles 
+atr_object_msgs/ObjectListStamped object_list
+
+# List of ATR states
+atr_state_msgs/ATRStateListStamped atrs
+
+# If the requested information is not available (missing data or too old), the server will return success=false
+bool success
+
+# In case of error, we can provide feedback about the error's source 
+atr_error_msgs/ATRError error

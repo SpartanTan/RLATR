@@ -1,0 +1,127 @@
+<?xml version="1.0"?>
+<robot name="swivel_wheel" xmlns:xacro="http://www.ros.org/wiki/xacro">
+ 
+  <!-- Wheels -->
+ 
+  <xacro:macro name = "swivel_arm" params="prefix lr index l offset">
+    <link name="${prefix}sw_arm_${lr}_${index}">
+      
+      <inertial>
+        <mass value="0.01" />
+        <origin xyz="0 0 0" />
+        <xacro:cylinder_inertia  m="0.01" r="0.004" h="${l}" />
+      </inertial>
+
+      <visual>
+        <geometry>
+        <cylinder radius="0.004" length="${l}"/>
+        </geometry>
+        <material name="silver">
+         <color rgba="0.3 0.3 0.3 1"/>
+        </material>  
+        <origin rpy="0 0 0" xyz="${offset}" />
+      </visual>
+    </link>
+  </xacro:macro>
+ 
+  <xacro:macro name="swivel_wheel" params="prefix fb lr parent translateX translateY translateZ wheel_radius wheel_height flip"> <!--fb : front, back ; lr: left, right -->
+
+    <!-- First link connected to parent-->
+    <xacro:swivel_arm prefix="${prefix}" lr = "${lr}" index = "1" l = "0.06" offset="0 0 -0.03"/>
+    
+    <joint name="${prefix}sw_arm_${lr}_connect_1" type="continuous">
+      <origin xyz="${translateX} ${translateY} ${translateZ}" rpy="0 0 0" /> 
+      <axis xyz="0 0 1" rpy="0 0 0" />
+      <parent link="${prefix}${parent}"/>
+      <child link="${prefix}sw_arm_${lr}_1"/>
+      <limit effort="100" velocity="100"/>
+      <joint_properties damping="0.0" friction="0.0"/>
+    </joint> 
+      
+    <!-- Second link connected to first--> 
+    <xacro:swivel_arm prefix="${prefix}" lr = "${lr}" index = "2" l = "0.04" offset="0 0 0.02"/>
+      
+    <joint name="${prefix}sw_arm_${lr}_connect_2" type="fixed">
+      <origin rpy="1.5707 0 0" xyz="0 0 -0.06" />
+      <parent link="${prefix}sw_arm_${lr}_1"/>
+      <child link="${prefix}sw_arm_${lr}_2"/>
+    </joint>
+    
+    <!-- Third link connected to second--> 
+    <xacro:swivel_arm prefix="${prefix}" lr = "${lr}" index = "3" l = "0.06" offset="0 0 -0.03"/>
+      
+    <joint name="${prefix}sw_arm_${lr}_connect_3" type="fixed">
+      <origin rpy="-1.5707 0 -0.78" xyz="0 0 0.04" />
+      <parent link="${prefix}sw_arm_${lr}_2"/>
+      <child link="${prefix}sw_arm_${lr}_3"/>
+    </joint>
+    
+    <!-- Fourth link connected to third--> 
+    <xacro:swivel_arm prefix="${prefix}" lr = "${lr}" index = "4" l = "0.04" offset="0 0 -0.02"/>
+    
+    <joint name="${prefix}sw_arm_${lr}_connect_4" type="fixed">
+      <origin rpy="1.5707 0 0" xyz="0 0 -0.060" />
+      <parent link="${prefix}sw_arm_${lr}_3"/>
+      <child link="${prefix}sw_arm_${lr}_4"/>
+    </joint>
+
+    <!-- Wheel connected to fourth--> 
+    <link name="${prefix}${fb}_${lr}_swivel_wheel">
+      <visual>
+        <origin xyz="0 0 0" rpy="${flip*pi/2} 0 0" /> 
+        <geometry>
+          <cylinder length="${wheel_height}" radius="${wheel_radius}" />
+        </geometry>
+        <material name="Black" />
+      </visual>
+      <collision>
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <geometry>
+          <cylinder length="${wheel_height}" radius="${wheel_radius}" />
+        </geometry>
+      </collision>
+      <inertial>
+        <mass value="${swivel_wheel_mass}" />
+        <origin xyz="0 0 0" />
+        <xacro:cylinder_inertia  m="${swivel_wheel_mass}" r="${wheel_radius}" h="${wheel_height}" />
+      </inertial>
+    </link>
+ 
+    <gazebo reference="${prefix}${fb}_${lr}_swivel_wheel">
+      <mu1 value="0.8"/>
+      <mu2 value="0.8"/>
+      <kp  value="10000000.0" />
+      <kd  value="1.0" />
+      <fdir1 value="1 0 0"/>
+      <material>Gazebo/Black</material>
+      <turnGravityOff>false</turnGravityOff>
+    </gazebo>
+ 
+    <joint name="${prefix}${fb}_${lr}_swivel_wheel_joint" type="continuous">
+      <parent link="${prefix}sw_arm_${lr}_4"/>
+      <child link="${prefix}${fb}_${lr}_swivel_wheel"/>
+      <origin rpy="0 0 0" xyz="0 0 -0.04" />
+      <axis xyz="0 0 1" rpy="0 0 0" />
+      <limit effort="100" velocity="100"/>
+      <joint_properties damping="0.0" friction="0.0"/>
+    </joint>
+ 
+
+    
+    <!-- Transmission is important to link the joints and the controller -->
+<!--
+    <transmission name="${fb}_${lr}_swivel_wheel_joint_trans">
+      <type>transmission_interface/SimpleTransmission</type>
+      <joint name="${fb}_${lr}_swivel_wheel_joint">
+        <hardwareInterface>EffortJointInterface</hardwareInterface>
+      </joint>
+      <actuator name="${fb}_${lr}_swivel_wheel_joint_motor">
+        <hardwareInterface>EffortJointInterface</hardwareInterface>
+        <mechanicalReduction>1</mechanicalReduction>
+      </actuator>
+    </transmission>
+-->
+
+ 
+  </xacro:macro>
+</robot>

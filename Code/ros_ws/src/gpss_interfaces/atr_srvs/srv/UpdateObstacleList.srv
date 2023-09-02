@@ -1,0 +1,7 @@
+#current trajectory. Is used on obstacles_generator to place obstacles on or outside the trajectory
+float32[] trajectory
+
+---
+# the parameters of the obstacles
+float32[] radius
+float32[] pos 

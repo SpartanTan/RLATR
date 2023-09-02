@@ -1,0 +1,14 @@
+sympy
+tqdm
+seaborn
+cvxopt
+osqp
+cvxpy
+pillow
+scikit-learn
+faiss-cpu
+matplotlib
+shapely
+scipy
+keyboard
+tensorboard

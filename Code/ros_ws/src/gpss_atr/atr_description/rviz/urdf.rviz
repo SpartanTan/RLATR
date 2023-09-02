@@ -1,0 +1,373 @@
+Panels:
+  - Class: rviz_common/Displays
+    Help Height: 70
+    Name: Displays
+    Property Tree Widget:
+      Expanded:
+        - /Global Options1
+        - /RobotModel1
+        - /TF1
+        - /TF1/Frames1
+        - /TF1/Tree1
+      Splitter Ratio: 0.7511211037635803
+    Tree Height: 444
+  - Class: rviz_common/Views
+    Expanded:
+      - /Current View1
+    Name: Views
+    Splitter Ratio: 0.5
+Visualization Manager:
+  Class: ""
+  Displays:
+    - Alpha: 0.5
+      Cell Size: 1
+      Class: rviz_default_plugins/Grid
+      Color: 160; 160; 164
+      Enabled: true
+      Line Style:
+        Line Width: 0.029999999329447746
+        Value: Lines
+      Name: Grid
+      Normal Cell Count: 0
+      Offset:
+        X: 0
+        Y: 0
+        Z: 0
+      Plane: XY
+      Plane Cell Count: 10
+      Reference Frame: <Fixed Frame>
+      Value: true
+    - Alpha: 1
+      Class: rviz_default_plugins/RobotModel
+      Collision Enabled: false
+      Description File: ""
+      Description Source: Topic
+      Description Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /robot_description
+      Enabled: true
+      Links:
+        All Links Enabled: true
+        Expand Joint Details: false
+        Expand Link Details: false
+        Expand Tree: false
+        Link Tree Style: Links in Alphabetic Order
+        back_left_wheel:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        back_right_wheel:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        base_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        base_link_axis_x:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        base_link_axis_y:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        base_link_axis_z:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        col_front_chassis:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        col_front_left:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        col_front_right:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        col_rear_left:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        col_rear_right:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        front_left_swivel_wheel:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        front_right_swivel_wheel:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        loop_front_center:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        loop_front_right:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        loop_rear_left:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        loop_rear_right:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        pillar_back_left:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        pillar_back_right:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        pillar_front_left:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        pillar_front_right:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        sw_arm_left_1:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        sw_arm_left_2:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        sw_arm_left_3:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        sw_arm_left_4:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        sw_arm_right_1:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        sw_arm_right_2:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        sw_arm_right_3:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        sw_arm_right_4:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        table:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        world:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+      Name: RobotModel
+      TF Prefix: ""
+      Update Interval: 0
+      Value: true
+      Visual Enabled: true
+    - Class: rviz_default_plugins/TF
+      Enabled: true
+      Frame Timeout: 15
+      Frames:
+        All Enabled: false
+        back_left_wheel:
+          Value: true
+        back_right_wheel:
+          Value: true
+        base_link:
+          Value: true
+        base_link_axis_x:
+          Value: false
+        base_link_axis_y:
+          Value: false
+        base_link_axis_z:
+          Value: false
+        col_front_chassis:
+          Value: false
+        col_front_left:
+          Value: false
+        col_front_right:
+          Value: false
+        col_rear_left:
+          Value: false
+        col_rear_right:
+          Value: false
+        front_left_swivel_wheel:
+          Value: true
+        front_right_swivel_wheel:
+          Value: true
+        loop_front_center:
+          Value: false
+        loop_front_right:
+          Value: false
+        loop_rear_left:
+          Value: false
+        loop_rear_right:
+          Value: false
+        pillar_back_left:
+          Value: false
+        pillar_back_right:
+          Value: false
+        pillar_front_left:
+          Value: false
+        pillar_front_right:
+          Value: false
+        sw_arm_left_1:
+          Value: true
+        sw_arm_left_2:
+          Value: false
+        sw_arm_left_3:
+          Value: false
+        sw_arm_left_4:
+          Value: false
+        sw_arm_right_1:
+          Value: true
+        sw_arm_right_2:
+          Value: false
+        sw_arm_right_3:
+          Value: false
+        sw_arm_right_4:
+          Value: false
+        table:
+          Value: false
+        world:
+          Value: false
+      Marker Scale: 0.30000001192092896
+      Name: TF
+      Show Arrows: true
+      Show Axes: true
+      Show Names: true
+      Tree:
+        world:
+          base_link_axis_x:
+            base_link_axis_y:
+              base_link_axis_z:
+                base_link:
+                  back_left_wheel:
+                    {}
+                  back_right_wheel:
+                    {}
+                  col_front_chassis:
+                    {}
+                  col_front_left:
+                    {}
+                  col_front_right:
+                    {}
+                  col_rear_left:
+                    {}
+                  col_rear_right:
+                    {}
+                  loop_front_center:
+                    {}
+                  loop_front_right:
+                    {}
+                  loop_rear_left:
+                    {}
+                  loop_rear_right:
+                    {}
+                  pillar_front_right:
+                    table:
+                      pillar_back_left:
+                        {}
+                      pillar_back_right:
+                        {}
+                      pillar_front_left:
+                        {}
+                  sw_arm_left_1:
+                    sw_arm_left_2:
+                      sw_arm_left_3:
+                        sw_arm_left_4:
+                          front_left_swivel_wheel:
+                            {}
+                  sw_arm_right_1:
+                    sw_arm_right_2:
+                      sw_arm_right_3:
+                        sw_arm_right_4:
+                          front_right_swivel_wheel:
+                            {}
+      Update Interval: 0
+      Value: true
+  Enabled: true
+  Global Options:
+    Background Color: 48; 48; 48
+    Fixed Frame: world
+    Frame Rate: 30
+  Name: root
+  Tools:
+    - Class: rviz_default_plugins/MoveCamera
+  Transformation:
+    Current:
+      Class: rviz_default_plugins/TF
+  Value: true
+  Views:
+    Current:
+      Class: rviz_default_plugins/Orbit
+      Distance: 2.5132932662963867
+      Enable Stereo Rendering:
+        Stereo Eye Separation: 0.05999999865889549
+        Stereo Focal Distance: 1
+        Swap Stereo Eyes: false
+        Value: false
+      Focal Point:
+        X: 0.2792617380619049
+        Y: -0.021529769524931908
+        Z: 0.16919982433319092
+      Focal Shape Fixed Size: true
+      Focal Shape Size: 0.05000000074505806
+      Invert Z Axis: false
+      Name: Current View
+      Near Clip Distance: 0.009999999776482582
+      Pitch: 0.4847975969314575
+      Target Frame: <Fixed Frame>
+      Value: Orbit (rviz_default_plugins)
+      Yaw: 5.612415313720703
+    Saved: ~
+Window Geometry:
+  Displays:
+    collapsed: false
+  Height: 1043
+  Hide Left Dock: false
+  Hide Right Dock: false
+  QMainWindow State: 000000ff00000000fd000000010000000000000156000003b9fc0200000002fb000000100044006900730070006c006100790073010000003d0000023f000000c900fffffffb0000000a00560069006500770073010000028200000174000000a400ffffff00000624000003b900000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
+  Views:
+    collapsed: false
+  Width: 1920
+  X: 0
+  Y: 72

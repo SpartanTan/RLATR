@@ -1,0 +1,17 @@
+perception:
+  image_grabber:
+    raw_image_reshaped: [0, 0]
+  tag_detector:
+    aruco_dict:
+      "4x4_1000"
+    aruco_params:
+      "standard"
+  semantic_segmentation:
+    contour_min_length:
+      30
+    image_shape_resized:
+      [1024, 576]
+    weight_path:
+      "BiSeNet/res/tuve_0505/tuve_0505_final.pth"
+    plot:
+      True

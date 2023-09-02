@@ -1,0 +1,12 @@
+# ATR Path list visualizer (Trajectory Generator)
+joy2twist_publisher:
+  ros__parameters:
+    # Topic name where the joy input will be published
+    joy_topic_name: "/joy"
+    # Topic name where the Twist info will be published
+    cmd_twist_name: "/cmd_vel"
+    # atr_id. This param is needed to generate the frame_id in the Twist message
+    atr_id: 1
+    #  Gains from joy value to twist [1.0, 0.020, 1.0]
+    gains: [0.1, 0.020, 0.1]
+    

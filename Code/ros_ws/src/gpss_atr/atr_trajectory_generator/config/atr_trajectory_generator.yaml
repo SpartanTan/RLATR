@@ -1,0 +1,19 @@
+# ATR Path list visualizer (Trajectory Generator)
+atr_trajectory_generator:
+  ros__parameters:
+    # Topic name where the updated atr path list will be published
+    atr_path_topic_name: "fleet_atr_path_list"
+    # Formation list service name
+    formation_list_service_name: "get_atr_formation"
+    #  Topic name for the ATRState list 
+    atr_list_topic_name: "atr_state_list"
+    # Service name to update the path list
+    path_list_service_name: "update_atr_path_list"
+    # Sampling time for sending the paths points to the atr controller
+    period_ms: 10
+    # reference frame for the path
+    frame_id: "world"
+    # Prefix for the Twist topic name (should match the name provided by the ATR Controller node)
+    atr_path_publisher_prefix: "teleop_"
+    # Number of control samples for the BSpline
+    bspline_samples: 5

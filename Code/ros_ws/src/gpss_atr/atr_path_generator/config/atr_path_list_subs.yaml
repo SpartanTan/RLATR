@@ -1,0 +1,21 @@
+# ATR Path list visualizer (Trajectory Generator)
+atr_path_list_subscriber_pg:
+  ros__parameters:
+    atr_path_topic_name: "atr_path_list"
+    period_ms: 1000
+    frame_id: "world"
+    path_marker_topic_name: "atr_paths_marker"
+    color_id: 0
+    size: 0.02
+    alpha: 1.0
+
+# ATR Path list visualizer (Fleet Control)
+atr_path_list_subscriber_tg:
+  ros__parameters:
+    atr_path_topic_name: "fleet_atr_path_list"
+    period_ms: 1000
+    frame_id: "world"
+    path_marker_topic_name: "fleet_atr_paths_marker"
+    color_id: 5
+    size: 0.005
+    alpha: 0.80

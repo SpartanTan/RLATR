@@ -1,0 +1,555 @@
+Panels:
+  - Class: rviz_common/Displays
+    Help Height: 70
+    Name: Displays
+    Property Tree Widget:
+      Expanded:
+        - /Global Options1
+        - /Grid1
+        - /Grid1/Offset1
+        - /TF1/Frames1
+        - /TF1/Tree1
+        - /MarkerArray PG1
+        - /MarkerArray TG1
+        - /MarkerArray1
+        - /MarkerArray2
+      Splitter Ratio: 0.7511211037635803
+    Tree Height: 259
+  - Class: rviz_common/Views
+    Expanded:
+      - /Current View1
+    Name: Views
+    Splitter Ratio: 0.5
+Visualization Manager:
+  Class: ""
+  Displays:
+    - Alpha: 0.5
+      Cell Size: 1
+      Class: rviz_default_plugins/Grid
+      Color: 160; 160; 164
+      Enabled: true
+      Line Style:
+        Line Width: 0.029999999329447746
+        Value: Lines
+      Name: Grid
+      Normal Cell Count: 0
+      Offset:
+        X: 5
+        Y: 5
+        Z: 0
+      Plane: XY
+      Plane Cell Count: 15
+      Reference Frame: <Fixed Frame>
+      Value: true
+    - Alpha: 1
+      Class: rviz_default_plugins/RobotModel
+      Collision Enabled: false
+      Description File: ""
+      Description Source: Topic
+      Description Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /robot_description_1
+      Enabled: true
+      Links:
+        All Links Enabled: true
+        Expand Joint Details: false
+        Expand Link Details: false
+        Expand Tree: false
+        Link Tree Style: Links in Alphabetic Order
+        atr_1_back_left_wheel:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        atr_1_back_right_wheel:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        atr_1_base_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        atr_1_base_link_axis_x:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        atr_1_base_link_axis_y:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        atr_1_base_link_axis_z:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        atr_1_col_front_chassis:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        atr_1_col_front_left:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        atr_1_col_front_right:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        atr_1_col_rear_left:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        atr_1_col_rear_right:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        atr_1_front_left_swivel_wheel:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        atr_1_front_right_swivel_wheel:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        atr_1_loop_front_center:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        atr_1_loop_front_right:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        atr_1_loop_rear_left:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        atr_1_loop_rear_right:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        atr_1_pillar_back_left:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        atr_1_pillar_back_right:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        atr_1_pillar_front_left:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        atr_1_pillar_front_right:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        atr_1_sw_arm_left_1:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        atr_1_sw_arm_left_2:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        atr_1_sw_arm_left_3:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        atr_1_sw_arm_left_4:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        atr_1_sw_arm_right_1:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        atr_1_sw_arm_right_2:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        atr_1_sw_arm_right_3:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        atr_1_sw_arm_right_4:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        atr_1_table:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        world:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+      Name: RobotModel_1
+      TF Prefix: ""
+      Update Interval: 0
+      Value: true
+      Visual Enabled: true
+    - Alpha: 1
+      Class: rviz_default_plugins/RobotModel
+      Collision Enabled: false
+      Description File: ""
+      Description Source: Topic
+      Description Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /robot_description_2
+      Enabled: true
+      Links:
+        All Links Enabled: true
+        Expand Joint Details: false
+        Expand Link Details: false
+        Expand Tree: false
+        Link Tree Style: Links in Alphabetic Order
+      Name: RobotModel_2
+      TF Prefix: ""
+      Update Interval: 0
+      Value: true
+      Visual Enabled: true
+    - Alpha: 1
+      Class: rviz_default_plugins/RobotModel
+      Collision Enabled: false
+      Description File: ""
+      Description Source: Topic
+      Description Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /robot_description_3
+      Enabled: true
+      Links:
+        All Links Enabled: true
+        Expand Joint Details: false
+        Expand Link Details: false
+        Expand Tree: false
+        Link Tree Style: Links in Alphabetic Order
+      Name: RobotModel_3
+      TF Prefix: ""
+      Update Interval: 0
+      Value: true
+      Visual Enabled: true
+    - Alpha: 1
+      Class: rviz_default_plugins/RobotModel
+      Collision Enabled: false
+      Description File: ""
+      Description Source: Topic
+      Description Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /robot_description_4
+      Enabled: true
+      Links:
+        All Links Enabled: true
+        Expand Joint Details: false
+        Expand Link Details: false
+        Expand Tree: false
+        Link Tree Style: Links in Alphabetic Order
+      Name: RobotModel_4
+      TF Prefix: ""
+      Update Interval: 0
+      Value: true
+      Visual Enabled: true
+    - Class: rviz_default_plugins/TF
+      Enabled: true
+      Frame Timeout: 15
+      Frames:
+        All Enabled: false
+        atr_1_back_left_wheel:
+          Value: false
+        atr_1_back_right_wheel:
+          Value: false
+        atr_1_base_link:
+          Value: true
+        atr_1_base_link_axis_x:
+          Value: false
+        atr_1_base_link_axis_y:
+          Value: false
+        atr_1_base_link_axis_z:
+          Value: false
+        atr_1_col_front_chassis:
+          Value: false
+        atr_1_col_front_left:
+          Value: false
+        atr_1_col_front_right:
+          Value: false
+        atr_1_col_rear_left:
+          Value: false
+        atr_1_col_rear_right:
+          Value: false
+        atr_1_front_left_swivel_wheel:
+          Value: false
+        atr_1_front_right_swivel_wheel:
+          Value: false
+        atr_1_loop_front_center:
+          Value: false
+        atr_1_loop_front_right:
+          Value: false
+        atr_1_loop_rear_left:
+          Value: false
+        atr_1_loop_rear_right:
+          Value: false
+        atr_1_pillar_back_left:
+          Value: false
+        atr_1_pillar_back_right:
+          Value: false
+        atr_1_pillar_front_left:
+          Value: false
+        atr_1_pillar_front_right:
+          Value: false
+        atr_1_sw_arm_left_1:
+          Value: false
+        atr_1_sw_arm_left_2:
+          Value: false
+        atr_1_sw_arm_left_3:
+          Value: false
+        atr_1_sw_arm_left_4:
+          Value: false
+        atr_1_sw_arm_right_1:
+          Value: false
+        atr_1_sw_arm_right_2:
+          Value: false
+        atr_1_sw_arm_right_3:
+          Value: false
+        atr_1_sw_arm_right_4:
+          Value: false
+        atr_1_table:
+          Value: false
+        world:
+          Value: false
+      Marker Scale: 0.30000001192092896
+      Name: TF
+      Show Arrows: true
+      Show Axes: true
+      Show Names: true
+      Tree:
+        world:
+          atr_1_base_link_axis_x:
+            atr_1_base_link_axis_y:
+              atr_1_base_link_axis_z:
+                atr_1_base_link:
+                  atr_1_back_left_wheel:
+                    {}
+                  atr_1_back_right_wheel:
+                    {}
+                  atr_1_col_front_chassis:
+                    {}
+                  atr_1_col_front_left:
+                    {}
+                  atr_1_col_front_right:
+                    {}
+                  atr_1_col_rear_left:
+                    {}
+                  atr_1_col_rear_right:
+                    {}
+                  atr_1_loop_front_center:
+                    {}
+                  atr_1_loop_front_right:
+                    {}
+                  atr_1_loop_rear_left:
+                    {}
+                  atr_1_loop_rear_right:
+                    {}
+                  atr_1_pillar_front_right:
+                    atr_1_table:
+                      atr_1_pillar_back_left:
+                        {}
+                      atr_1_pillar_back_right:
+                        {}
+                      atr_1_pillar_front_left:
+                        {}
+                  atr_1_sw_arm_left_1:
+                    atr_1_sw_arm_left_2:
+                      atr_1_sw_arm_left_3:
+                        atr_1_sw_arm_left_4:
+                          atr_1_front_left_swivel_wheel:
+                            {}
+                  atr_1_sw_arm_right_1:
+                    atr_1_sw_arm_right_2:
+                      atr_1_sw_arm_right_3:
+                        atr_1_sw_arm_right_4:
+                          atr_1_front_right_swivel_wheel:
+                            {}
+      Update Interval: 0
+      Value: true
+    - Class: rviz_default_plugins/MarkerArray
+      Enabled: true
+      Name: MarkerArray NONA
+      Namespaces:
+        points_and_lines: true
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /nona_markers
+      Value: true
+    - Class: rviz_default_plugins/MarkerArray
+      Enabled: true
+      Name: MarkerArray PG
+      Namespaces:
+        path_atr_lines_1: true
+        path_atr_points_1: true
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /atr_paths_marker
+      Value: true
+    - Class: rviz_default_plugins/MarkerArray
+      Enabled: true
+      Name: MarkerArray TG
+      Namespaces:
+        path_atr_lines_1: true
+        path_atr_points_1: true
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /fleet_atr_paths_marker
+      Value: true
+    - Class: rviz_default_plugins/MarkerArray
+      Enabled: true
+      Name: MarkerArray
+      Namespaces:
+        object_1: true
+        object_2: true
+        object_3: true
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /obstacles_array
+      Value: true
+    - Class: rviz_default_plugins/MarkerArray
+      Enabled: true
+      Name: MarkerArray
+      Namespaces:
+        _0: true
+        _1: true
+        _10: true
+        _11: true
+        _12: true
+        _13: true
+        _14: true
+        _15: true
+        _16: true
+        _17: true
+        _18: true
+        _19: true
+        _2: true
+        _20: true
+        _21: true
+        _22: true
+        _23: true
+        _3: true
+        _4: true
+        _5: true
+        _6: true
+        _7: true
+        _8: true
+        _9: true
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /val_goal
+      Value: true
+    - Class: rviz_default_plugins/MarkerArray
+      Enabled: true
+      Name: MarkerArray
+      Namespaces:
+        _0: true
+        _1: true
+        _100: true
+        _2: true
+        _3: true
+        _4: true
+        _5: true
+        _6: true
+        _7: true
+        _8: true
+        _9: true
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /vis_input
+      Value: true
+  Enabled: true
+  Global Options:
+    Background Color: 48; 48; 48
+    Fixed Frame: world
+    Frame Rate: 30
+  Name: root
+  Tools:
+    - Class: rviz_default_plugins/MoveCamera
+  Transformation:
+    Current:
+      Class: rviz_default_plugins/TF
+  Value: true
+  Views:
+    Current:
+      Class: rviz_default_plugins/Orbit
+      Distance: 21.630258560180664
+      Enable Stereo Rendering:
+        Stereo Eye Separation: 0.05999999865889549
+        Stereo Focal Distance: 1
+        Swap Stereo Eyes: false
+        Value: false
+      Focal Point:
+        X: 4.3312273025512695
+        Y: 6.124832630157471
+        Z: -2.13905668258667
+      Focal Shape Fixed Size: true
+      Focal Shape Size: 0.05000000074505806
+      Invert Z Axis: false
+      Name: Current View
+      Near Clip Distance: 0.009999999776482582
+      Pitch: 0.6047972440719604
+      Target Frame: <Fixed Frame>
+      Value: Orbit (rviz_default_plugins)
+      Yaw: 5.4223952293396
+    Saved: ~
+Window Geometry:
+  Displays:
+    collapsed: false
+  Height: 701
+  Hide Left Dock: false
+  Hide Right Dock: false
+  QMainWindow State: 000000ff00000000fd00000001000000000000015600000277fc0200000002fb000000100044006900730070006c006100790073010000002e0000017c0000009b00fffffffb0000000a0056006900650077007301000001ae000000f70000008400ffffff000003aa0000027700000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
+  Views:
+    collapsed: false
+  Width: 1284
+  X: 32
+  Y: 124

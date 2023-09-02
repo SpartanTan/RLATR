@@ -1,0 +1,31 @@
+atr_controller:
+  ros__parameters:
+    state_topic_name: "atr_joint_states"
+    command_topic_name: "joint_command"
+    teleop_topic_name: "teleop"
+    enable_topic_stats: False
+    topic_stats_topic_name: "controller_stats"
+    topic_stats_publish_period_ms: 1000
+    deadline_duration_ms: 0
+    controller:
+      feedback_matrix: [-10.0000, -51.5393, 356.8637, 154.4146]
+
+atr_driver:
+  ros__parameters:
+    state_topic_name: "atr_joint_states"
+    command_topic_name: "joint_command"
+    disturbance_topic_name: "disturbance"
+    cart_base_joint_name: "cart_base_joint"
+    pole_joint_name: "pole_joint"
+    state_publish_period_us: 10000
+    enable_topic_stats: False
+    topic_stats_topic_name: "driver_stats"
+    topic_stats_publish_period_ms: 1000
+    deadline_duration_ms: 0
+    driver:
+      wheel_length: 0.48
+      wheel_radius: 0.125
+      damping_coefficient: 20.0
+      gravity: -9.8
+      max_wheel_speed: 1000.0
+      noise_level: 0.0

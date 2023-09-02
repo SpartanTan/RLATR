@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<robot name="atr_robot" xmlns:xacro="http://ros.org/wiki/xacro">
+
+  <!-- atr -->
+
+  <xacro:arg name="type" default="automower"/>
+  <xacro:arg name="prefix" default=""/>
+
+  <xacro:include filename="$(find atr_description)/urdf/$(arg type).urdf.xacro" />
+
+  <!-- WORLD CF -->
+  <link name="world" />
+
+  <!-- arm -->
+  <xacro:atr_robot prefix="$(arg prefix)"/>
+
+  
+
+</robot>

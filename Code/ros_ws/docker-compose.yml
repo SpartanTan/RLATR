@@ -1,0 +1,73 @@
+version: '3.5'
+
+x-common-variables: &common-variables
+  ROS_DOMAIN_ID: 0
+  # RMW_IMPLEMENTATION: "rmw_cyclonedds_cpp"
+  # CYCLONEDDS_URI: "<General><AllowMulticast>spdp</><MaxMessageSize>65500B</></>"
+
+services:
+  atr_interface:
+    network_mode: host
+    build: ./src/gpss_interfaces
+    image: gpss_interfaces:latest
+    environment: 
+     - "RMW_IMPLEMENTATION=rmw_cyclonedds_cpp"
+     - "ROS_DOMAIN_ID=0"
+    restart: no
+  
+  factory_db:
+    network_mode: host
+    build: ./src/factory_db
+    image: factory_db:latest
+    depends_on: 
+      - atr_interface
+    environment: 
+     - "RMW_IMPLEMENTATION=rmw_cyclonedds_cpp"
+     - "ROS_DOMAIN_ID=0"
+    restart: no
+
+  gpss_atr_pipeling:
+    network_mode: host
+    # image: factory_db:latest
+    build: ./src/gpss_atr
+    image: gpss_atr:latest
+    depends_on: 
+      - factory_db
+    environment:
+      - "DISPLAY=${DISPLAY}"
+      - "ROS_DOMAIN_ID=0"
+      - "ROS_HOSTNAME=atr_pipline"
+      - "RMW_IMPLEMENTATION=rmw_cyclonedds_cpp"
+      # - QT_QPA_PLATFORM=xcb
+    restart: no
+    volumes:
+      - /tmp/.X11-unix:/tmp/.X11-unix
+      - /dev/dri:/dev/dri
+      - ./src/gpss_atr/atr_demo/config:/opt/ros/overlay_ws/install/share/atr_demo/config
+    devices:
+      - /dev/dri:/dev/dri`
+    # command: ros2 launch atr_demo atr_driver_bringup.launch.py
+    # command: ros2 launch atr_demo atr_scenario.launch.py joy_twist:=True joy_topic:=teleop_1
+
+  gpss_atr_rl:
+    network_mode: host
+    # image: gpss_atr:latest
+    build: ./src/rl_atr
+    depends_on: 
+      - gpss_atr_pipeling
+    image: rl_atr:latest
+    environment:
+      - "DISPLAY=${DISPLAY}"
+      - "ROS_DOMAIN_ID=0"
+      - "ROS_HOSTNAME=rl_service"
+      - "RMW_IMPLEMENTATION=rmw_cyclonedds_cpp"
+    restart: no 
+    volumes:
+      - /tmp/.X11-unix:/tmp/.X11-unix
+      - /dev/dri:/dev/dri
+    devices:
+      - /dev/dri:/dev/dri`
+    # command: ros2 run atr_rl_testpublisher cmdPub
+    command: ros2 launch atr_launch atr_multi_spawn.launch.py
+
+

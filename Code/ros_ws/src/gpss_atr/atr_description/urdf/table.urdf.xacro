@@ -1,0 +1,92 @@
+<?xml version="1.0"?>
+<robot name="table" xmlns:xacro="http://www.ros.org/wiki/xacro">
+ 
+  <xacro:macro name="pillar" params="prefix fb lr length parent translateX translateY translateZ">
+    <link name="${prefix}pillar_${fb}_${lr}">
+      <visual>
+        <origin xyz="0 0 ${length/2.0}" rpy="0 0 0" /> 
+        <geometry>
+          <cylinder length="${length}" radius="${pillar_radius}" />
+        </geometry>
+        <material name="Gray" />
+      </visual>
+      <collision>
+        <origin xyz="0 0 ${length/2.0}" rpy="0 0 0" />
+        <geometry>
+          <cylinder length="${length}" radius="${pillar_radius}" />
+        </geometry>
+      </collision>
+      <inertial>
+        <mass value="${pillar_mass}" />
+        <!-- <origin xyz="0 0 0" rpy="${flip*pi/2} 0 0"/> -->
+        <origin xyz="0 0 0" />
+        <xacro:cylinder_inertia  m="${pillar_mass}" r="${pillar_radius}" h="${length}" />
+      </inertial>
+    </link>
+
+    <joint name="${prefix}${fb}_${lr}_pillar_joint" type="fixed">
+      <parent link="${prefix}${parent}"/>
+      <child link="${prefix}pillar_${fb}_${lr}"/>
+      <origin xyz="${translateX} ${translateY} ${translateZ}" rpy="0 0 0" /> 
+    </joint>
+ 
+    <gazebo reference="${prefix}pillar_${fb}_${lr}">
+      <mu1 value="100.0"/>
+      <mu2 value="100.0"/>
+      <kp  value="10000000.0" />
+      <kd  value="1.0" />
+      <fdir1 value="1 0 0"/>
+      <material>Gazebo/Grey</material>
+      <turnGravityOff>false</turnGravityOff>
+    </gazebo>
+
+  </xacro:macro>
+ 
+  <xacro:macro name="table" params="prefix parent translateX translateY translateZ">
+
+    <xacro:pillar prefix="${prefix}" fb="front" lr="right" length="${front_pillar_length}" parent="${parent}" translateX="${translateX}" translateY="${translateY}" translateZ="${translateZ}"/>
+
+    <link name="${prefix}table">
+      <visual>
+        <geometry>
+          <box size="${table_length} ${table_width} ${table_height}"/>
+        </geometry>
+        <material name="Gray"/>
+      </visual>
+      <collision>
+        <geometry>
+          <box size="${table_length} ${table_width} ${table_height}"/>
+        </geometry>
+      </collision>
+      <xacro:box_inertia  m="${5*table_mass}" x="${table_length}" y="${table_width}" z="${table_height}"/>
+    </link>
+
+    <joint name="${prefix}table_joint" type="fixed">
+      <parent link="${prefix}pillar_front_right"/>
+      <child link="${prefix}table"/>
+      <origin xyz="${pillar_off_x} 
+                   ${-pillar_off_y} 
+                   ${pillar_off_z_front}" />
+    </joint>
+
+
+
+    <xacro:pillar prefix="${prefix}" fb="back" lr="right" length="${back_pillar_length}" parent="table" 
+      translateX="${pillar_off_x}" 
+      translateY="${pillar_off_y}" 
+      translateZ="${-pillar_off_z_back}"/>
+
+    <xacro:pillar prefix="${prefix}" fb="back" lr="left" length="${back_pillar_length}" parent="table" 
+      translateX="${pillar_off_x}" 
+      translateY="${-pillar_off_y}" 
+      translateZ="${-pillar_off_z_back}"/>
+    
+    <xacro:pillar prefix="${prefix}" fb="front" lr="left" length="${front_pillar_length}" parent="table" 
+      translateX="${-pillar_off_x}" 
+      translateY="${-pillar_off_y}" 
+      translateZ="${-pillar_off_z_front}"/>
+    
+    
+
+  </xacro:macro>
+</robot>

@@ -1,0 +1,19 @@
+nona_generator:
+  ros__parameters:
+    # World coordinate frame
+    frame_id: "world"
+
+    # Topic name to publish the NONA markers (for visualization)
+    marker_topic_name: "nona_markers"
+
+    # Service name to send the NONA List
+    service_name: "get_nona_list"
+
+    # Topic name to publish the NONA List
+    topic_name: "nona_list"
+
+    # Sim time
+    use_sim_time: false
+
+    # JSON file name with the description of the NONA polygons (plant layout)
+    nona_description_filename: "nona_description.json"
