@@ -28,7 +28,7 @@ class SimFactoryEnv(gym.Env):
         self.params: env_param = params
         assert render_mode is None or render_mode in self.metadata["render_modes"]
         self.render_mode = render_mode
-        self.path: Path = Path(self.params.path_param, self.params.atr_param.atr_linear_vel_max)
+        self.path: Path = Path(self.params.path_param, self.params.atr_param.atr_linear_vel_max, self.params.atr_param.track_width)
         self.atr: ATR_RK4 = ATR_RK4(self.params.atr_param)
         self.rf = RangeFinder(self.params.sensor_param, self.params.atr_param.track_width)
 
@@ -42,8 +42,20 @@ class SimFactoryEnv(gym.Env):
         self.fig = None
         self.dynamic_plot = None
         self.total_reward = 0.0
-        
+        self.ep_step = 0
+        self.recent_speeds = []
+        self.recent_angular_velocities = []
+        self.low_speed_duration = 0
+
+    '''
+       ___ _____ ___ ___ 
+      / __|_   _| __| _ \
+      \__ \ | | | _||  _/
+      |___/ |_| |___|_|  
+                         
+    '''
     def step(self, action:np.ndarray):
+        self.ep_step += 1
         """
         In this method, ghost ATR will move one index forward. The ATR will move according to the action. 
         ### Parameters
@@ -53,7 +65,8 @@ class SimFactoryEnv(gym.Env):
         observation, reward, done, truncated, info
         observation: (vel, omega, look_ahead_course_error, course_error, cross_track_error)
         """
-        
+        if self.params.path_param.dynamic_obstacles:
+            self.path.update_obstacles()
         # Ghost ATR step
         self.ghost_index += 1
         if self.ghost_index >= len(self.path.ghost_trajectory):
@@ -63,43 +76,114 @@ class SimFactoryEnv(gym.Env):
         # ATR step
         self.action = np.clip(action, self.params.atr_param.atr_w_min, self.params.atr_param.atr_w_max) # make sure action is with boundary
         self.atr.runge_kutta_4_step(self.action, method="simple")
-        self.eta, _, self.look_ahead_point, _, self.look_ahead_course_error, self.course_error = self.path.calculate_error_vector(self.atr.state)
+        # self.atr.state = np.array([self.ghost_atr_position[0], self.ghost_atr_position[1], self.path.ghost_yaw_angles[self.ghost_index]])
+        self.eta, self.index, self.look_ahead_point, _, self.look_ahead_course_error, self.course_error, self.distance_to_goal = self.path.calculate_error_vector(self.atr.state)
         
-        # do not use sensor if there are no obstacles
-        if not self.params.path_param.without_obstacles:
-            if not self.params.rangefinder: # my dirty method
-                self.min_distance_to_walls, self.closest_point_on_walls = self.path.minimum_distance_to_walls(
+        # do not use sensor if there are nothing
+        if not self.params.path_param.without_anything:
+            # my dirty method
+            if not self.params.rangefinder: 
+                if not self.params.path_param.without_walls:
+                    self.min_distance_to_walls, self.closest_point_on_walls = self.path.minimum_distance_to_walls(
                     self.atr.state[0:2], method='kdtree', num_of_closest_points=self.params.sensor_param.num_points_on_walls)
                 self.closeness, self.obstacles_obs, self.results = self.closeness_cal()
+            # current method
             else:
                 self.intersections_, self.obstacles_obs, self.measurements, self.results, self.closeness = self.rf.closeness_cal(self.atr.state, self.path.obstacles_np)    
             hit_obstacle = self.path.is_atr_in_obstacles(self.atr.state[0:2])
-            hit_wall = not self.path.is_inside(self.atr.state[0:2])
+            if not self.params.path_param.without_walls:
+                hit_wall = not self.path.is_inside(self.atr.state[0:2])
+            else:
+                hit_wall = False
         else:
             hit_obstacle = False
             hit_wall = False
             self.obstacles_obs = np.array([])
             self.closeness = np.zeros(self.params.sensor_param.nsectors)
         
-        is_arrived = self.path.is_arrived(self.atr.state[0:2])
-        self.reward_pf, self.reward_oa, self.reward = self.reward_calc()
+        if self.index == len(self.path.even_trajectory)-1:
+            is_arrived = self.path.is_arrived(self.atr.state[0:2], 2)
+        else:
+            is_arrived = False
+        # if the distance to the nearest obstacle is too close, turn lambda into 0
+        if self.params.path_param.without_anything:
+            self.Lambda = 1.0
+            self.too_close = False
+        else:
+            if self.obstacles_obs.shape[0] == 0:
+                self.Lambda = 1.0
+                self.too_close = False
+            else:
+                min_distance_index = np.argmin(self.obstacles_obs[:, 0])
+                min_distance = self.obstacles_obs[min_distance_index, 0]
+                corresponding_angle = self.obstacles_obs[min_distance_index, 1]
+                avg_distance = np.mean(self.obstacles_obs[:, 0])
+                avg_angle = abs(np.mean(self.obstacles_obs[:, 1]))
+                gamma_lambda = 0.6
+                Lambda_values = np.tanh(gamma_lambda * ((self.obstacles_obs[:, 0] + 1) * 
+                  (np.sin(np.minimum(np.abs(self.obstacles_obs[:, 1]), np.pi / 2)) + 1) - 1))
+                min_distance = self.obstacles_obs[min_distance_index, 0]
+                min_Lambda_index = np.argmin(Lambda_values)
+                self.Lambda = Lambda_values[min_Lambda_index]
+
+                # self.Lambda = np.clip(self.Lambda, 0.0, 1.0)
+                self.Lambda = np.clip(np.round(self.Lambda, 2), 0.0, 1.0)
+                if min_distance < self.params.critical_distance:
+                    self.too_close = True
+                    self.Lambda = 0.1
+                else:
+                    self.too_close = False
+                #     self.Lambda = self.Lambda_bk
+        self.reward_pf, self.reward_oa, self.r_low_speed, self.reward = self.reward_calc()
         self.terminated = False
         if hit_obstacle or hit_wall:
+            print("!!HIT")
+            self.once_hit = True
             self.terminated = True
             self.reward = (1-self.Lambda) * self.params.reward_param.r_collision
         if is_arrived:
+            if self.once_hit:
+                print("!!HIT AND ARRIVED")
+            else:
+                print("!!ARRIVED")
+            print(f"Total steps: {self.ep_step}")
+            print(f"Finishing rate: {np.round(100 * (self.index / len(self.path.even_trajectory)),2)}")
             self.terminated = True
-            self.reward += self.params.reward_param.r_arrived
+            step_penalty_rate = 10
+            step_penalty = step_penalty_rate * (np.exp((self.ep_step - self.optimal_total_steps) / self.arrive_reward_adj) - 1) if self.ep_step > self.optimal_total_steps else 0
+            self.reward = self.params.reward_param.r_arrived - step_penalty 
         # terminate this episode if the total reward is too large
+        self.total_reward += self.reward
         if abs(self.total_reward) > self.params.reward_param.max_total_reward:
+            print("REWAED TOO LARGE")
             self.terminated = True
-            self.reward += self.params.reward_param.r_terminated 
+            self.reward = self.params.reward_param.r_terminated
+            finishin_rate = np.round(100 * (self.index / len(self.path.even_trajectory)),2)
+            self.reward += finishin_rate * 2
+            print(f"Finishing rate: {finishin_rate}")
+
+        if self.ep_step > self.params.path_param.max_ep_steps:
+            print("STEPS TOO LARGE")
+            self.terminated = True
+            self.reward = self.params.reward_param.r_terminated
+            finishin_rate = np.round(100 * (self.index / len(self.path.even_trajectory)),2)
+            self.reward += finishin_rate * 2
+            print(f"Finishing rate: {finishin_rate}")
+            
         # observations for the agent
         next_obs = self._get_obs()
-        info = {}
+        info = self._get_info(is_arrived)
+        # info = {}
         truncated = False
         return next_obs, self.reward, self.terminated, truncated, info
     
+    '''
+        ___ ___ _____    ___  ___ ___ 
+       / __| __|_   _|  / _ \| _ ) __|
+      | (_ | _|  | |   | (_) | _ \__ \
+       \___|___| |_|    \___/|___/___/
+                                      
+    '''
     def _get_obs(self):
         """
         Get the observation for the agent.
@@ -107,58 +191,142 @@ class SimFactoryEnv(gym.Env):
         ### Returns
         (26, ) numpy array, [vel, omega, look_ahead_course_error, course_error, cross_track_error, reward_trade_off, closeness(20,)]
         """
-        if not self.params.path_param.without_obstacles:
+        if not self.params.path_param.without_anything:
             p = np.array([self.atr.linear_velocity, 
                                 self.atr.angular_velocity, 
                                 self.look_ahead_course_error, 
                                 self.course_error, 
                                 self.eta[0],
                                 self.eta[1], 
-                                self.reward_trade_off])
+                                self.Lambda])
             p = np.concatenate([p, self.closeness])
         else:
             p = np.array([self.atr.linear_velocity, 
-                        self.atr.angular_velocity, 
-                        self.look_ahead_course_error, 
-                        self.course_error, 
-                        self.eta[0],
-                        self.eta[1]])
+                                self.atr.angular_velocity, 
+                                self.look_ahead_course_error, 
+                                self.course_error, 
+                                self.eta[0],
+                                self.eta[1],
+                                self.Lambda])
+            p = np.concatenate([p, self.closeness])
         return p.astype(np.float32)
     
+    def _get_info(self, is_arrived):
+        return {
+        "steps": self.ep_step,
+        'is_arrived': is_arrived,
+        'finish_rate': np.round(100 * (self.index / len(self.path.even_trajectory)),2),
+        }
+
+    '''
+       ___ _____      ___   ___ ___  
+      | _ \ __\ \    / /_\ | _ \   \ 
+      |   / _| \ \/\/ / _ \|   / |) |
+      |_|_\___| \_/\_/_/ \_\_|_\___/ 
+                                     
+    '''
     def reward_calc(self):
         r_oa = 0.0
         r_pf = 0.0
         r_lagging = 0.0
-        r_exists = - self.Lambda * (2*self.params.reward_param.alpha_r + 1 )
         den = 0.0
         num = 0.0
+        # Update the list of recent speeds
+        self.recent_speeds.append(self.atr.linear_velocity)
+        self.recent_angular_velocities.append(self.atr.angular_velocity)
+        if len(self.recent_speeds) > self.params.reward_param.vel_window:
+            self.recent_speeds.pop(0)  # Remove the oldest speed
+            self.recent_angular_velocities.pop(0)
+            
+        # Calculate the average speed
+        # average_speed = sum(self.recent_speeds) / len(self.recent_speeds)
+        average_speed = sum(speed for speed in self.recent_speeds) / len(self.recent_speeds)
+        average_angular_velocity = sum(angular_velocity for angular_velocity in self.recent_angular_velocities) / len(self.recent_angular_velocities)
+        # Determine if the speed is below the threshold
+        if abs(average_speed) < self.params.reward_param.low_speed_threshold:
+            self.low_speed_duration += self.params.reward_param.duration  # Increment duration of low speed
+        else:
+            self.low_speed_duration = 0
+        # reward for turning hard when getting too close
+        if self.too_close:
+            r_turn = 10 * abs(average_angular_velocity)
+        else:
+            r_turn = 0.0
+        # Calculate the penalty
+        # The penalty increases as the average speed decreases and as the duration of low speed continues
+        # speed_factor = max(0, 1 - average_speed / self.params.reward_param.low_speed_threshold)
+        speed_factor = max(0, 1 - abs(average_speed) / self.params.reward_param.low_speed_threshold)
+        low_speed_penalty = -self.params.reward_param.low_speed_penalty_rate * self.low_speed_duration * speed_factor
+        if low_speed_penalty < -self.params.reward_param.max_low_speed_penalty:
+            low_speed_penalty = -self.params.reward_param.max_low_speed_penalty
+        if self.too_close:
+            low_speed_penalty *= 0.2
+        # Additional penalty for moving backward
+        backward_penalty = 0
+        if average_speed < 0:
+            backward_penalty = -self.params.reward_param.backward_penalty_rate * abs(average_speed)
+        if self.too_close:
+            backward_penalty = 0.0
+        # reward for getting closer to the goal
+        # Check if the robot has progressed to a new point on the trajectory
+        if self.index > self.previous_trajectory_index:
+            # Reward for moving closer to the goal
+            trajectory_progress_reward = self.params.reward_param.trajectory_progress_reward
+        else:
+            trajectory_progress_reward = 0
+        self.previous_trajectory_index = self.index
         if len(self.obstacles_obs) == 0:          
-            r_oa -= (1 + np.abs(self.params.reward_param.gamma_theta * np.pi)) ** -1 * (self.params.reward_param.gamma_x * 5**2) ** -1
+            # r_oa -= (1 + np.abs(self.params.reward_param.gamma_theta * np.pi)) ** -1 * (self.params.reward_param.gamma_x * 5**2) ** -1
+            r_oa = 0.0
         else:
             for idx, data in enumerate(self.obstacles_obs):
-                num += ((1 + np.abs(self.params.reward_param.gamma_theta * data[1])) ** -1) * ((self.params.reward_param.gamma_x * np.maximum(data[0], 0.1)**2) ** -1)
-                den += ( 1 + np.abs(self.params.reward_param.gamma_theta * data[1])) ** -1
-                den = 1
+                # theta_i = np.round(data[1] / self.params.reward_param.angle_resolution) * self.params.reward_param.angle_resolution
+                # x_i = np.round(data[0] / self.params.reward_param.distance_resolution) * self.params.reward_param.distance_resolution
+                theta_i = data[1]
+                x_i = data[0]
+                num += np.log(((1 + np.abs(self.params.reward_param.gamma_theta * theta_i)) ** -1) * ((self.params.reward_param.gamma_x * np.maximum(x_i, self.params.reward_param.epsilon_x)**2) ** -1))
+                # num += ((1 + np.abs(self.params.reward_param.gamma_theta * theta_i)) ** -1) * ((self.params.reward_param.gamma_x * np.maximum(x_i, self.params.reward_param.epsilon_x)**2) ** -1)
+                # den += ( 1 + np.abs(self.params.reward_param.gamma_theta * theta_i)) ** -1
+                den += 1
                 # r_oa -= np.log((1 + np.abs(gamma_theta * data[1])) ** -1 * (gamma_x * np.maximum(data[0], 0.1)**2) ** -1)
                 # r_oa -= (1 + np.abs(gamma_theta * data[1])) ** -1 * (gamma_x * np.maximum(data[0], 0.1)**2) ** -1
                 
                 # num += ((1 + np.abs(gamma_theta * data[1])) ** -1) * (np.log(np.abs(gamma_x)) + 2 * np.log(np.maximum(data[0], 0.1)))
                 # den += (1 + np.abs(gamma_theta * data[1])) ** -1
             # r_oa /= len(obstacles_obs)
-            r_oa = - num/den
+            if num == 0.0:
+                r_oa = 0.0
+            else:
+                r_oa = - num/den
+                # r_oa = np.round(r_oa / self.params.reward_param.oa_result_resolution) * self.params.reward_param.oa_result_resolution
+                # if self.too_close:
+                # r_oa *= 2
+                if r_oa > 0:
+                    r_oa = 0.0
             # r_oa = -np.log(abs(r_oa))
-            r_oa /= self.params.reward_param.r_oa_frac
-        # r_pf = -1 + ( (np.sqrt(abs(self.atr.linear_velocity))/self.params.atr_param.atr_linear_vel_max) * np.cos(self.course_error)+1) * (np.exp(-self.params.reward_param.gammma_e * np.abs(self.eta[1]) + 1))
-        r_pf = -1 + (1.0 * np.cos(self.course_error)+1) * (np.exp(-self.params.reward_param.gammma_e * np.abs(self.eta[1]) + 1))
+            # r_oa /= self.params.reward_param.r_oa_frac
+        # r_pf = -1 + ( (np.sqrt(abs(self.atr.linear_velocity))/self.params.atr_param.atr_linear_vel_max) * np.cos(self.course_error)+1) * (np.exp(-self.params.reward_param.gamma_e * np.abs(self.eta[1]) + 1))
+        course_error_discrete = np.round(self.course_error / self.params.reward_param.angle_resolution) * self.params.reward_param.angle_resolution
+        cross_track_error_discrete = np.round(np.abs(self.eta[1]) / self.params.reward_param.distance_resolution) * self.params.reward_param.distance_resolution
+        r_pf = -1 + (np.abs(self.atr.linear_velocity)/self.params.atr_param.atr_linear_vel_max * np.cos(course_error_discrete)+1) * (np.exp(-self.params.reward_param.gamma_e * np.abs(cross_track_error_discrete)) + 1)
+        # r_pf = np.round(r_pf / self.params.reward_param.pf_result_resolution) * self.params.reward_param.pf_result_resolution
         # r_pf *= 3
         r_lagging = - abs(self.eta[0]) * self.params.reward_param.lagging_frac
-        if not self.params.path_param.without_obstacles:
-            reward = self.Lambda * r_pf + (1 - self.Lambda) * r_oa + r_exists + r_lagging 
+        if not self.params.path_param.without_anything:
+            r_exists = - self.Lambda * (2*self.params.reward_param.alpha_r + 1 )
+            reward = self.Lambda * r_pf + (1 - self.Lambda) * r_oa + r_exists + backward_penalty + low_speed_penalty # + r_lagging + trajectory_progress_reward
         else:
-            reward = r_pf + r_exists + r_lagging
-        self.total_reward += reward
-        return r_pf, r_oa, reward
+            r_exists = -(2*self.params.reward_param.alpha_r + 1 )
+            reward = r_pf + r_exists + backward_penalty # + r_lagging + low_speed_penalty # + backward_penalty + trajectory_progress_reward 
+        return r_pf, r_oa, low_speed_penalty, reward
 
+    '''
+       ___ ___ _  _ ___  ___ ___ 
+      | _ \ __| \| |   \| __| _ \
+      |   / _|| .` | |) | _||   /
+      |_|_\___|_|\_|___/|___|_|_\
+                                 
+    '''
     def render(self):
         def draw_arrow(ax: Axes, x, y, angle, length=1, color='b', alpha=1.0):
             dx = length * np.cos(angle)
@@ -170,18 +338,19 @@ class SimFactoryEnv(gym.Env):
                 self.fig = plt.figure(figsize=(8, 6))
                 gs = self.fig.add_gridspec(2, 2)
                 self.ax0 = self.fig.add_subplot(gs[:, 0])
-                self.path.render(self.ax0, if_yaw_angle=False)
+                self.path.render(self.ax0, False, self.params.path_param.without_walls)
                 self.ax0.scatter(self.look_ahead_point[0], self.look_ahead_point[1],
                         s=100, marker='*', label='Target Point')
                 # draw atr arrow
                 draw_arrow(self.ax0, self.atr.state[0], self.atr.state[1], self.atr.state[2], 1.0, color='r', alpha=1)
-                
-                if not self.params.path_param.without_obstacles:
+                self.ax0.add_patch(plt.Circle((self.atr.state[0], self.atr.state[1]), self.params.atr_param.track_width/2, color='r', fill=False))
+                if not self.params.path_param.without_anything:
                     if not self.params.rangefinder:
                         # draw closest points on walls
-                        for i in range(self.params.sensor_param.num_points_on_walls):
-                            self.ax0.scatter(self.closest_point_on_walls[i][0], self.closest_point_on_walls[i]
-                                    [1], s=100, marker='x')
+                        if not self.params.path_param.without_walls:
+                            for i in range(self.params.sensor_param.num_points_on_walls):
+                                self.ax0.scatter(self.closest_point_on_walls[i][0], self.closest_point_on_walls[i]
+                                        [1], s=100, marker='x')
                         # draw arrow to obstacle points on each obstacle
                         for i, obs in enumerate(self.obstacles_obs):
                             draw_arrow(self.ax0, self.atr.state[0], self.atr.state[1], obs[2], obs[0], alpha=0.3)
@@ -206,7 +375,7 @@ class SimFactoryEnv(gym.Env):
                     draw_arrow(self.ax1, 0.0, 0.0, angle, 1.0)        
                 # for data in self.mes:
                 #     draw_arrow(self.ax1, 0.0, 0.0, data[0], data[1], 'r')
-                if not self.params.path_param.without_obstacles:
+                if not self.params.path_param.without_anything:
                     for idx, angle in enumerate(self.params.sensor_param.angles_of_sectors):
                         angle += self.atr.state[2]
                         draw_arrow(self.ax1, 0.0, 0.0, angle, self.results[idx], color='r') 
@@ -224,16 +393,18 @@ class SimFactoryEnv(gym.Env):
             # Refresh plotting
             # Left side main plot
             self.ax0.clear()
-            self.path.render(self.ax0, if_yaw_angle=False)
+            self.path.render(self.ax0, False, self.params.path_param.without_walls)
             self.ax0.scatter(self.look_ahead_point[0], self.look_ahead_point[1],
                     s=100, marker='*', label='Target Point')
             # Plot the ATR arrow
             draw_arrow(self.ax0, self.atr.state[0], self.atr.state[1], self.atr.state[2], 1.0, color='r', alpha=1.0)
-            if not self.params.path_param.without_obstacles:
+            self.ax0.add_patch(plt.Circle((self.atr.state[0], self.atr.state[1]), self.params.atr_param.track_width/2, color='r', fill=False))
+            if not self.params.path_param.without_anything:
                 if not self.params.rangefinder:
                     # draw closest points on walls
-                    for i in range(self.params.sensor_param.num_points_on_walls):
-                        self.ax0.scatter(self.closest_point_on_walls[i][0], self.closest_point_on_walls[i]
+                    if not self.params.path_param.without_walls:
+                        for i in range(self.params.sensor_param.num_points_on_walls):
+                            self.ax0.scatter(self.closest_point_on_walls[i][0], self.closest_point_on_walls[i]
                                 [1], s=100, marker='x')
                     # draw arrow to obstacle points on each obstacle
                     for i, obs in enumerate(self.obstacles_obs):
@@ -264,16 +435,16 @@ class SimFactoryEnv(gym.Env):
             # Plot sectors
             self.ax1.clear()
             # draw bound of each sector
-            if not self.params.path_param.without_obstacles:
+            if not self.params.path_param.without_anything:
                 for angle in self.params.sensor_param.sectors:
                     angle += self.atr.state[2]
                     draw_arrow(self.ax1, 0.0, 0.0, angle, 1.0)
                 for idx, angle in enumerate(self.params.sensor_param.angles_of_sectors):
                     angle += self.atr.state[2]
                     draw_arrow(self.ax1, 0.0, 0.0, angle, self.results[idx], color='r')     
-                self.ax1.annotate(f"lambda: {self.Lambda}\nr_pf: {self.reward_pf:.2f}\nr_oa: {self.reward_oa:.2f}\nr: {self.reward:.2f}\ntotal_r: {self.total_reward}\nterminated: {self.terminated}", xy=(0, 0), xycoords='axes fraction', ha='left', va='bottom')
+                self.ax1.annotate(f"lambda: {self.Lambda}\nr_pf: {self.reward_pf:.2f}\nr_oa: {self.reward_oa}\nr_speed: {self.r_low_speed:.2f}\nr: {self.reward:.2f}\ntotal_r: {self.total_reward}\nterminated: {self.terminated}", xy=(0, 0), xycoords='axes fraction', ha='left', va='bottom')
             else:
-                self.ax1.annotate(f"lambda: {self.Lambda}\nr_pf: {self.reward_pf:.2f}\nr_oa: {self.reward_oa:.2f}\nr: {self.reward:.2f}\ntotal_r: {self.total_reward}\nterminated: {self.terminated}", xy=(0, 0), xycoords='axes fraction', ha='left', va='bottom')
+                self.ax1.annotate(f"lambda: {self.Lambda}\nr_pf: {self.reward_pf:.2f}\nr_oa: {self.reward_oa:.2f}\nr_speed: {self.r_low_speed:.2f}\nr: {self.reward:.2f}\ntotal_r: {self.total_reward}\nterminated: {self.terminated}", xy=(0, 0), xycoords='axes fraction', ha='left', va='bottom')
                        
             self.ax1.set_title("Fake renge sensor data")
             self.ax1.axis("equal")
@@ -295,12 +466,12 @@ class SimFactoryEnv(gym.Env):
                 self.fig = plt.figure(figsize=(8, 6))
                 gs = self.fig.add_gridspec(2, 2)
                 self.ax0 = self.fig.add_subplot(gs[:, 0])
-                self.path.render(self.ax0, if_yaw_angle=False)
+                self.path.render(self.ax0, if_yaw_angle=False, no_plotting_walls=self.params.path_param.without_walls)
                 self.ax0.scatter(self.look_ahead_point[0], self.look_ahead_point[1],
                         s=100, marker='*', label='Target Point')
                 # draw atr arrow
                 draw_arrow(self.ax0, self.atr.state[0], self.atr.state[1], self.atr.state[2], 1.0, color='r', alpha=1)
-                if not self.params.path_param.without_obstacles:
+                if not self.params.path_param.without_anything:
                     if not self.params.rangefinder:
                         # draw closest points on walls
                         for i in range(self.params.sensor_param.num_points_on_walls):
@@ -327,12 +498,12 @@ class SimFactoryEnv(gym.Env):
             # Refresh plotting
             # Left side main plot
             self.ax0.clear()
-            self.path.render(self.ax0, if_yaw_angle=False)
+            self.path.render(self.ax0, if_yaw_angle=False, no_plotting_walls=self.params.path_param.without_walls)
             self.ax0.scatter(self.look_ahead_point[0], self.look_ahead_point[1],
                     s=100, marker='*', label='Target Point')
             # Plot the ATR arrow
             draw_arrow(self.ax0, self.atr.state[0], self.atr.state[1], self.atr.state[2], 1.0, color='r', alpha=1.0)
-            if not self.params.path_param.without_obstacles:
+            if not self.params.path_param.without_anything:
                 if not self.params.rangefinder:
                     # draw closest points on walls
                     for i in range(self.params.sensor_param.num_points_on_walls):
@@ -364,6 +535,7 @@ class SimFactoryEnv(gym.Env):
                   f"lambda: {self.Lambda}\n" \
                   f"r_pf: {self.reward_pf:.2f}\n" \
                   f"r_oa: {self.reward_oa:.2f}\n" \
+                  f"r_speed: {self.r_low_speed}\n" \
                   f"r: {self.reward:.2f}\n" \
                   f"total_r: {self.total_reward}\n" \
                   f"terminated: {self.terminated}\n", \
@@ -404,36 +576,64 @@ class SimFactoryEnv(gym.Env):
         
 
         """
-        if options is None:
-            options={'init_type': 'run'}
-        if options.get('init_type') == 'run':
+        # if options is None:
+        #     options={'init_type': 'run'}
+        # if options.get('init_type') == 'run':
+        #     self.path.reset()
+        #     return True
+        # package_dir = pkg_resources.get_distribution('FactoryEnv').location
+        # save_dir = package_dir + '/factory_env/map/env_paths/'
+        # if options.get('file_name') is None:
+        #     file_name = 'short.pkl'
+        # else:
+        #     file_name = options.get('file_name')
+        # file_path = os.path.join(save_dir, file_name)
+        # if options.get('init_type') == 'save':
+        #     self.path.reset()
+        #     with open(file_path, "wb") as file:
+        #         pickle.dump(self.path, file)
+        #         return False
+        # elif options.get('init_type') == 'load':
+        #     with open(file_path, "rb") as file:
+        #         self.path = pickle.load(file)
+        #         return False
+        if self.params.path_param.static_map == 0:
             self.path.reset()
             return True
         package_dir = pkg_resources.get_distribution('FactoryEnv').location
         save_dir = package_dir + '/factory_env/map/env_paths/'
-        if options.get('file_name') is None:
-            file_name = 'short.pkl'
-        else:
-            file_name = options.get('file_name')
+        file_name = 'test.pkl'
         file_path = os.path.join(save_dir, file_name)
-        if options.get('init_type') == 'save':
+        if self.params.path_param.static_map == 1:
             self.path.reset()
             with open(file_path, "wb") as file:
                 pickle.dump(self.path, file)
                 return False
-        elif options.get('init_type') == 'load':
+        elif self.params.path_param.static_map == 2:
             with open(file_path, "rb") as file:
                 self.path = pickle.load(file)
-                return False
-
+                self.params.path_param = self.path.params
+                self.params.path_param.static_map = 2
+                return False       
+    '''
+       ___ ___ ___ ___ _____ 
+      | _ \ __/ __| __|_   _|
+      |   / _|\__ \ _|  | |  
+      |_|_\___|___/___| |_|  
+                             
+    '''
     def reset(self,
               *,
               seed=None,
               options=None):
         super().reset(seed=seed)
-        
         self.file_logic(options)
-
+        self.ep_step = 0
+        self.recent_speeds = []
+        self.low_speed_duration = 0
+        self.previous_trajectory_index = 0
+        self.optimal_total_steps = int(self.params.path_param.Lp / self.params.atr_param.atr_linear_vel_max / self.params.atr_param.dt)
+        self.arrive_reward_adj = 400 * (self.params.path_param.Lp/self.params.path_param.Lp_std)
         # Reset the ATR state
         init_state = np.array(
             [self.path.waypoints[0][0], self.path.waypoints[0][1], self.path.yaw_angles[0]])
@@ -446,7 +646,8 @@ class SimFactoryEnv(gym.Env):
         # init_state = np.array([1.043, -5.374, -1.973]) # close to wall without obs
         # init_state = np.array([ 0.896, -5.575, -2.973]) # close to wall with wrong angle
         
-        
+        self.once_hit = False
+        self.too_close = False
         
         self.action = np.array([0.0, 0.0])
         self.atr.reset(init_state)
@@ -456,15 +657,16 @@ class SimFactoryEnv(gym.Env):
         self.ghost_atr_position = self.path.ghost_trajectory[self.ghost_index]
         
         # sample random trade-off parameter
-        self.Lambda = 10**(-np.random.gamma(self.params.reward_param.alpha_lambda, 1.0/self.params.reward_param.beta_lambda))
+        self.Lambda = self.Lambda_bk = 10**(-np.random.gamma(self.params.reward_param.alpha_lambda, 1.0/self.params.reward_param.beta_lambda))
         self.reward_trade_off = np.log10(self.Lambda)
         
         # Get error vector, look ahead point, look ahead course error, course error
-        self.eta, index_of_the_closest_point, self.look_ahead_point, look_ahead_point_yaw, self.look_ahead_course_error, self.course_error = self.path.calculate_error_vector(
+        self.eta, self.index, self.look_ahead_point, look_ahead_point_yaw, self.look_ahead_course_error, self.course_error, self.distance_to_goal = self.path.calculate_error_vector(
             self.atr.state)
-        if not self.params.path_param.without_obstacles:
+        if not self.params.path_param.without_anything:
             if not self.params.rangefinder: # my dirty method
-                self.min_distance_to_walls, self.closest_point_on_walls = self.path.minimum_distance_to_walls(
+                if not self.params.path_param.without_walls:
+                    self.min_distance_to_walls, self.closest_point_on_walls = self.path.minimum_distance_to_walls(
                     self.atr.state[0:2], method='kdtree', num_of_closest_points=self.params.sensor_param.num_points_on_walls)
 
                 # Print atr and obstacles info
@@ -483,7 +685,8 @@ class SimFactoryEnv(gym.Env):
             
         # observations for the agent
         next_obs = self._get_obs()
-        self.reward_pf, self.reward_oa, self.reward = self.reward_calc()
+        # print(self.obstacles_obs)
+        self.reward_pf, self.reward_oa, self.r_low_speed, self.reward = self.reward_calc()
         self.terminated = False
         
         self.total_reward = 0.0
@@ -588,39 +791,39 @@ class SimFactoryEnv(gym.Env):
             angle_diffs.append(angle_diff)
             tmp_angles.append(tmp_angle)
             obs_or_walls.append(np.zeros_like(distance))   
-            
-        # Add points on the walls to the obstacles_obs
-        avg_distance_to_walls = np.min(self.min_distance_to_walls)
-        wall_center = np.mean(self.closest_point_on_walls, axis=0)
-        which_side = self.check_point_position(self.atr.state, wall_center)
-        for distance, wallp in zip(self.min_distance_to_walls, self.closest_point_on_walls):
-            angles = np.arctan2(wallp[1] - point[1], wallp[0] - point[0])
-            angle_diffs_global.append(angles)
-            
-            # angle_diff = angles - point[2]
-            angle_diff = angles - point[2]
-            angle_diff = np.remainder(angle_diff + np.pi, 2 * np.pi) - np.pi
-            angle_diffs.append(angle_diff)
-            distances.append(distance)
-            if avg_distance_to_walls < 0.2:
-                if_compensate.append(1000)
-            else:
-                if_compensate.append(666)
-            which_sides.append(which_side)
-            obs_or_walls.append(1)
-            
-        distances = np.hstack(distances)
-        distances = distances.flatten()
-        if_compensate = np.hstack(if_compensate)
-        if_compensate = if_compensate.flatten() 
-        angle_diffs = np.hstack(angle_diffs)
-        angle_diffs = angle_diffs.flatten()
-        angle_diffs_global = np.hstack(angle_diffs_global)
-        angle_diffs_global = angle_diffs_global.flatten()
-        which_sides = np.hstack(which_sides)
-        which_sides = which_sides.flatten()
-        obs_or_walls = np.hstack(obs_or_walls)
-        obs_or_walls = obs_or_walls.flatten()
+        if not self.params.path_param.without_walls:    
+            # Add points on the walls to the obstacles_obs
+            avg_distance_to_walls = np.min(self.min_distance_to_walls)
+            wall_center = np.mean(self.closest_point_on_walls, axis=0)
+            which_side = self.check_point_position(self.atr.state, wall_center)
+            for distance, wallp in zip(self.min_distance_to_walls, self.closest_point_on_walls):
+                angles = np.arctan2(wallp[1] - point[1], wallp[0] - point[0])
+                angle_diffs_global.append(angles)
+                
+                # angle_diff = angles - point[2]
+                angle_diff = angles - point[2]
+                angle_diff = np.remainder(angle_diff + np.pi, 2 * np.pi) - np.pi
+                angle_diffs.append(angle_diff)
+                distances.append(distance)
+                if avg_distance_to_walls < 0.2:
+                    if_compensate.append(1000)
+                else:
+                    if_compensate.append(666)
+                which_sides.append(which_side)
+                obs_or_walls.append(1)
+        if len(distances) != 0:    
+            distances = np.hstack(distances)
+            distances = distances.flatten()
+            if_compensate = np.hstack(if_compensate)
+            if_compensate = if_compensate.flatten() 
+            angle_diffs = np.hstack(angle_diffs)
+            angle_diffs = angle_diffs.flatten()
+            angle_diffs_global = np.hstack(angle_diffs_global)
+            angle_diffs_global = angle_diffs_global.flatten()
+            which_sides = np.hstack(which_sides)
+            which_sides = which_sides.flatten()
+            obs_or_walls = np.hstack(obs_or_walls)
+            obs_or_walls = obs_or_walls.flatten()
         
         how_many_obs = 0
         for idx, distance in enumerate(distances):
@@ -744,7 +947,7 @@ class SimFactoryEnv(gym.Env):
         else:
             result = np.ones(num_of_sectors-1) * 1.0
             closeness = np.zeros(params.nsectors)
-        return closeness, obstacles_obs, result
+        return closeness, np.array(obstacles_obs), result
     
     def extract_startend_indices(self, data):
         # Create an array of differences

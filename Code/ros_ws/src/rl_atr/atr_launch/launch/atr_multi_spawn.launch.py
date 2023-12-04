@@ -10,6 +10,7 @@ from launch_ros.substitutions import FindPackageShare
 
 import xacro
 import yaml
+from launch.actions import LogInfo
 
 # import matplotlib.pyplot as plt
 # import numpy as np
@@ -150,7 +151,6 @@ def generate_launch_description():
         emulate_tty=True,
     )
     ld.add_action(nona_list_node)
-
     """
  
        _____ _    ____ _____ ___  ______   __  ____  ____  
@@ -294,20 +294,46 @@ def generate_launch_description():
     )
     ld.add_action(atr_factory_state)
 
+    # ATR Path Generator
+    path_gen_dir = FindPackageShare("atr_path_generator").find("atr_path_generator")
+    atr_path_generator_yaml = os.path.join(path_gen_dir, "config", "atr_path_generator.yaml")
+
+    atr_path_generator_node = Node(
+        package="atr_path_generator",
+        name="atr_path_generator",
+        executable="atr_path_generator_node",
+        parameters=[atr_path_generator_yaml],
+        output="screen",
+        emulate_tty=True,
+    )
+    ld.add_action(atr_path_generator_node)
+    # ATR Path List subscriber (transforms the ATRPathList topic to MarkerArray to visualize it in Rviz)
+
+    atr_path_subs_yaml = os.path.join(path_gen_dir, "config", "atr_path_list_subs.yaml")
+    # ATR Path List subscriber (visualize Path generator path)
+    atr_path_list_subs_pg = Node(
+        package="atr_path_generator",
+        name="atr_path_list_subscriber_pg",
+        executable="path_list_subscriber_node",
+        parameters=[atr_path_subs_yaml],
+        output="screen",
+        emulate_tty=True,
+    )
+    ld.add_action(atr_path_list_subs_pg)
 
     test_pub_node = Node(
         package="atr_rl_testpublisher",
-        # name="testPublisher",
+        name="testPublisher",
         executable="cmdPub",
         output="screen",
     )
     ld.add_action(test_pub_node)
 
-    test_conda_node = Node(
-        package="atr_launch",
-        # name="testPublisher",
-        executable="condatest",
-        output="screen",
-    )
-    ld.add_action(test_conda_node)
+    # test_conda_node = Node(
+    #     package="atr_launch",
+    #     # name="testPublisher",
+    #     executable="condatest",
+    #     output="screen",
+    # )
+    # ld.add_action(test_conda_node)
     return ld

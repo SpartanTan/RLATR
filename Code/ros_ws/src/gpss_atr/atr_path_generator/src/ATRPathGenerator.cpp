@@ -100,24 +100,20 @@ ATRPathGenerator::ATRPathGenerator() : Node("object_list_subscriber"), NodeDescr
   // Update Job List
   // job_service_ = create_service<atr_srvs::srv::UpdateJobList>(
   //     job_service_name_, std::bind(&ATRPathGenerator::updateJobListCB, this, _1, _2));
-
   // Gets the nona data
   if (!getStaticData())
   {
     RCLCPP_ERROR(get_logger(), "Error getting static data");
   }
-
   // ATR Path List publisher
   atr_path_list_pub_ = this->create_publisher<atr_path_msgs::msg::ATRPathList>(atr_path_topic_name_, 10);
 
   // UpdateATRPath client To send the new ATR Path List as a request to the service
   // provided by ATR Fleet Control
   atr_path_list_client_ = this->create_client<atr_srvs::srv::UpdateATRPathList>(atr_path_service_name_);
-
   // This timer triggers the publisher of the ObjectList message
   // timer_ = this->create_wall_timer(std::chrono::milliseconds(atr_period_ms_),
   //                                  std::bind(&ATRPathGenerator::timer_callback, this));
-
   RCLCPP_INFO(get_logger(), "Ready to generate trajectories!");
 }
 
@@ -554,7 +550,7 @@ bool ATRPathGenerator::getFormation()
 bool ATRPathGenerator::getNONA()
 {
   // Get the NONA Object list
-  rclcpp::Rate loop_rate(2);
+  rclcpp::Rate loop_rate(0.2);
   while (!nona_list_client_->service_is_ready())
   {
     if (!rclcpp::ok())
@@ -569,29 +565,28 @@ bool ATRPathGenerator::getNONA()
   auto nona_req = std::make_shared<atr_srvs::srv::GetObjectListStamped::Request>();
 
   // Call the Formation List service
-  auto result = nona_list_client_->async_send_request(nona_req);
+  auto result_future = nona_list_client_->async_send_request(nona_req);
 
-  if (rclcpp::spin_until_future_complete(this->get_node_base_interface(), result) == rclcpp::FutureReturnCode::SUCCESS)
+  // Wait for the future to complete
+  if (rclcpp::spin_until_future_complete(this->get_node_base_interface(), result_future) == rclcpp::FutureReturnCode::SUCCESS)
   {
-    if (result.get()->success)
-    {
-      nona_list_->objects = result.get()->list.objects;
-
-      RCLCPP_INFO_STREAM(get_logger(), "Got NONA objects!");
-
-      // Set the NONA Object List data flag to true
-      v_data_flags[map_data_index_["nona"]] = true;
-      return true;
-    }
-    else
-    {
-      RCLCPP_WARN_STREAM(get_logger(), "Error[" << static_cast<int>(result.get()->error.id)
-                                                << "]: getting nona object list: " << result.get()->error.message);
-    }
+      auto result = result_future.get(); // Get the result once and store it
+      if (result->success)
+      {
+          nona_list_->objects = result->list.objects;
+          RCLCPP_INFO_STREAM(get_logger(), "Got NONA objects!");
+          v_data_flags[map_data_index_["nona"]] = true;
+          return true;
+      }
+      else
+      {
+          RCLCPP_WARN_STREAM(get_logger(), "Error[" << static_cast<int>(result->error.id)
+                                                    << "]: getting nona object list: " << result->error.message);
+      }
   }
   else
   {
-    RCLCPP_WARN(get_logger(), "Failed to call service NONA Object List");
+      RCLCPP_WARN(get_logger(), "Failed to call service NONA Object List");
   }
 
   return false;

@@ -1,5 +1,5 @@
 # ATR in Docker
-Runing different nodes in docker can help isolate each service. Here I create three four Dockerfiles and one docker-compose.ym file to run everything.
+Runing different nodes in docker can help isolate each service. Here I create four Dockerfiles and one docker-compose.yml file to run everything.
 
 ## Dockerfiles
 So under the workspace/src, there are four folders
@@ -63,6 +63,8 @@ OK. I thinks these are everything about setting up this project in Docker. I wil
 docker compose build
 # 3. Run the docker compose 
 docker compose run
+# Show the path
+ros2 service call /trigger_new_path_list std_srvs/srv/Trigger
 ```
 
 ### Other stuff

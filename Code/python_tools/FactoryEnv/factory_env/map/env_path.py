@@ -17,7 +17,8 @@ starttime = time.time()
 class Path():
     def __init__(self,
                  params: path_param,
-                 ghost_max_vel=0.1,):
+                 ghost_max_vel=0.1,
+                 atr_trackwidth=0.48):
         
         self.params = params
         self.interval=params.trajectory_point_interval
@@ -31,8 +32,8 @@ class Path():
         self.look_ahead_distance=params.look_ahead_distance # Lp * 0.2
         self.target_finishing_time=params.target_finishing_time
         self.atr_max_vel=ghost_max_vel
-        
         self.ref_point_index = 0
+        self.atr_radius = atr_trackwidth / 2
         
     def generate_waypoints_not_back(self, Nw, Lp):
         """
@@ -97,8 +98,11 @@ class Path():
                 p_obst = p(norm_omega_obst) + d_obst * np.array([np.cos(gamma_obst - np.pi/2), np.sin(gamma_obst - np.pi/2)])
 
                 # Draw obstacle radius r_obst from Poisson(mu_r)
-                # r_obst = np.clip(np.random.normal(mu_r, 0.3), 0.1, 1)
-                r_obst = mu_r # temporary using a fix radius
+                # r_obst = np.random.poisson(mu_r)
+                if self.params.dynamic_obstacles_r:
+                    r_obst = np.clip(np.random.normal(mu_r, 0.1), 0.1, 1)
+                else:
+                    r_obst = mu_r # temporary using a fix radius
                 # Add obstacle (p_obst, r_obst) to environment
                 obstacles.append((p_obst, r_obst))
 
@@ -179,30 +183,68 @@ class Path():
         start_line = self.create_line_between_points(extended_resampled_shifted_points_up[0], extended_resampled_shifted_points_down[0], point_distance=self.interval)
         end_line = self.create_line_between_points(extended_resampled_shifted_points_up[-1], extended_resampled_shifted_points_down[-1], point_distance=self.interval)
         
-        self.wall_up = extended_resampled_shifted_points_up
-        self.wall_down = extended_resampled_shifted_points_down
-        self.start_line = start_line
-        self.end_line = end_line
-        
-        # This list is for the normal distance calculation
-        # Yeah I know it looks ugly and provides identical information with the walls_kdTree
-        # May tune it in the furture
-        self.walls = [self.wall_up, self.wall_down, self.start_line, self.end_line]
-        exterior =  np.vstack([self.start_line, self.wall_up, self.end_line[::-1], self.wall_down[::-1]])
-        
-        self.generate_kdTree_attributes()
-        self.bounding_box_polygon = Polygon(exterior)
-        self.walls_LinearRing = LinearRing(exterior)
+        if not self.params.without_walls:
+            self.wall_up = extended_resampled_shifted_points_up
+            self.wall_down = extended_resampled_shifted_points_down
+            self.start_line = start_line
+            self.end_line = end_line
+
+            # This list is for the normal distance calculation
+            # Yeah I know it looks ugly and provides identical information with the walls_kdTree
+            # May tune it in the furture
+            self.walls = [self.wall_up, self.wall_down, self.start_line, self.end_line]
+            exterior =  np.vstack([self.start_line, self.wall_up, self.end_line[::-1], self.wall_down[::-1]])
+            # self.generate_kdTree_attributes()
+            polygon = Polygon(exterior)
+            cleaned_polygon = polygon.buffer(0)
+            self.bounding_box_polygon = cleaned_polygon
+            x, y = self.bounding_box_polygon.exterior.xy
+            self.walls_stack = np.column_stack((x, y))
+            self.generate_kdTree_attributes()
+            self.walls_LinearRing = LinearRing(self.walls_stack)
+        else:
+            self.walls_LinearRing = None
+            
     def generate_kdTree_attributes(self):
         """
         Generate cKDTree useful variables for querying the closest point in the walls
         """
-        self.walls_stack = np.vstack([self.wall_up, self.wall_down, self.start_line, self.end_line])
-        self.starting_indices = [0, len(self.wall_up), 
-                    len(self.wall_up) + len(self.wall_down), 
-                    len(self.wall_up) + len(self.wall_down) + len(self.start_line)]
         self.walls_kd_tree = cKDTree(self.walls_stack)
+        # self.walls_stack = np.vstack([self.wall_up, self.wall_down, self.start_line, self.end_line])
+        # self.starting_indices = [0, len(self.wall_up), 
+        #             len(self.wall_up) + len(self.wall_down), 
+        #             len(self.wall_up) + len(self.wall_down) + len(self.start_line)]
+        # self.walls_kd_tree = cKDTree(self.walls_stack)
+
+    def update_obstacles(self):
+        """
+        Updates the positions of obstacles by adding a random value within the speed limit to
+        the x and y coordinates. Each obstacle receives a unique random change.
+        The random values are scaled to not exceed the speed limit in either direction.
+        The third column (other attributes) remains unchanged.
         
+        :param obstacles_np: numpy array of obstacles, where each row is (x, y, ...)
+        :param speed_limit: maximum change for x and y coordinates
+        :return: None; the operation is done in-place on the numpy array
+        """
+        # Generate a random change for each obstacle's x and y coordinate
+        # Values are between -0.5 and 2, then scaled down to fit within the speed limit
+        # random_changes = np.random.uniform(-0.1, 0.2, size=(self.obstacles_np.shape[0], 2))
+        random_changes = np.random.normal(self.params.obs_mean_vel, self.params.obs_std_vel, size=(self.obstacles_np.shape[0], 2))
+        
+        # Determine which obstacles will have their direction flipped
+        flip_directions = np.random.rand(self.obstacles_np.shape[0]) < self.params.flip_chance
+        
+        # Apply the direction flip by multiplying by -1
+        random_changes[flip_directions, :] *= -1
+        np.clip(random_changes, -self.atr_max_vel, self.atr_max_vel, out=random_changes)
+        
+        scaling_factors = 0.1
+        random_changes *= scaling_factors
+
+        # Apply the random changes to each obstacle's x and y coordinates
+        self.obstacles_np[:, :2] += random_changes
+
     def local_orthogonal_directions(self, points):
         """
         Calculate the local orthogonal directions
@@ -304,12 +346,14 @@ class Path():
         """
         if method == 'kdtree':
             min_distance, index = self.walls_kd_tree.query(point, num_of_closest_points) # (2,), (2,)
-            closest_trajectory_index = np.searchsorted(self.starting_indices, index, side="right") - 1    
-            # Convert to list for element-wise operation
-            closest_trajectory_index_list = closest_trajectory_index.tolist()
-            starting_indices_for_each_point = [self.starting_indices[i] for i in closest_trajectory_index_list]
-            closest_point_index = index - np.array(starting_indices_for_each_point)
-            closest_points = [self.walls[trajectory_index][point_index] for trajectory_index, point_index in zip(closest_trajectory_index_list, closest_point_index.tolist())]
+            closest_points = self.walls_stack[index]
+
+            # closest_trajectory_index = np.searchsorted(self.starting_indices, index, side="right") - 1    
+            # # Convert to list for element-wise operation
+            # closest_trajectory_index_list = closest_trajectory_index.tolist()
+            # starting_indices_for_each_point = [self.starting_indices[i] for i in closest_trajectory_index_list]
+            # closest_point_index = index - np.array(starting_indices_for_each_point)
+            # closest_points = [self.walls[trajectory_index][point_index] for trajectory_index, point_index in zip(closest_trajectory_index_list, closest_point_index.tolist())]
             return min_distance, closest_points
             # print(f"kdtree: {min_distance, self.walls[closest_trajectory_index][closest_point_index]}")
         elif method=='normal':        
@@ -350,8 +394,12 @@ class Path():
         x, y = atr_pos
         for j in range(self.obstacles_np.shape[0]):
                 dist = np.sqrt((x - self.obstacles_np[j, 0])**2 + (y - self.obstacles_np[j, 1])**2)
-                if dist <= self.obstacles_np[j, 2]:
-                    return True
+                if self.params.consider_width:
+                    if dist <= self.obstacles_np[j, 2] + self.atr_radius:
+                        return True
+                else:
+                    if dist <= self.obstacles_np[j, 2]:
+                        return True
         return False
 
     def is_crossed(self):
@@ -407,8 +455,8 @@ class Path():
         is_inside = self.bounding_box_polygon.contains(Point(point))
         return is_inside
 
-    def is_arrived(self, point):
-        if np.linalg.norm(point - self.waypoints[-1]) < self.interval / 2.0:
+    def is_arrived(self, point, tolerance=1):
+        if np.linalg.norm(point - self.waypoints[-1]) < self.interval * tolerance:
             return True
         else:
             return False
@@ -445,15 +493,58 @@ class Path():
             pass
         
         min_distance, index = self.trejectory_kd_tree.query(point)
-        if index < self.ref_point_index:
-            index = self.ref_point_index
-        else:
-            self.ref_point_index = index
-        index = index + self.params.how_many_points_forward # shifted 3 points forward
+        distance_to_goal = self.trajectory_length_at_each_point[-1] - self.trajectory_length_at_each_point[index]
+        
+        # index = index + self.params.how_many_points_forward # shifted 3 points forward
+        # if index >= len(self.even_trajectory):
+        #     index = len(self.even_trajectory) - 1
+        # self.closest_point_to_trajectory = self.even_trajectory[index]
+        # # check if this point is in the obstacles
+        # # If true then shift the index forward until it is not in the obstacles
+        # while self.is_atr_in_obstacles(self.closest_point_to_trajectory):
+        #     index += 2
+        #     if index >= len(self.even_trajectory):
+        #         index = len(self.even_trajectory) - 1
+        #     if index < self.ref_point_index:
+        #         index = self.ref_point_index
+        #     else:
+        #         self.ref_point_index = index
+        #     self.closest_point_to_trajectory = self.even_trajectory[index]
+        # else:
+        #     if index < self.ref_point_index:
+        #         index = self.ref_point_index
+        #     else:
+        #         self.ref_point_index = index
+        # closest_point_yaw_angle = self.yaw_angles[index]
+
+        index += self.params.how_many_points_forward
         if index >= len(self.even_trajectory):
             index = len(self.even_trajectory) - 1
+
+        # Loop to handle when the index is in obstacles
+        while self.is_atr_in_obstacles(self.even_trajectory[index]):
+            index += 2
+            if index >= len(self.even_trajectory):
+                index = len(self.even_trajectory) - 1
+            if index < self.ref_point_index:
+                index = self.ref_point_index
+            self.ref_point_index = index
+
+        # After exiting the loop, prevent large jumps and going backward if the index is not in an obstacle
+        if not self.is_atr_in_obstacles(self.even_trajectory[index]):
+            if index > self.ref_point_index + self.params.allowed_jump_index:
+                # print(f"JUMPED: {index}")
+                index = self.ref_point_index + self.params.allowed_jump_index
+            elif index < self.ref_point_index:
+                index = self.ref_point_index
+            else:
+                self.ref_point_index = index
+
         self.closest_point_to_trajectory = self.even_trajectory[index]
         closest_point_yaw_angle = self.yaw_angles[index]
+
+
+
         R = np.array([[np.cos(closest_point_yaw_angle), -np.sin(closest_point_yaw_angle)],
                       [np.sin(closest_point_yaw_angle), np.cos(closest_point_yaw_angle)]])
         eta = R.T @ (point - self.closest_point_to_trajectory) # eta = [s, x]->[along-track error, cross-track error]
@@ -478,10 +569,9 @@ class Path():
         look_ahead_course_error = target_point_yaw - heading
         look_ahead_course_error = np.remainder(look_ahead_course_error + np.pi, 2 * np.pi) - np.pi
         
+        return eta, index, target_point, target_point_yaw, look_ahead_course_error, course_error, distance_to_goal
         
-        return eta, index, target_point, target_point_yaw, look_ahead_course_error, course_error
-        
-    def render(self, ax, if_yaw_angle=False):
+    def render(self, ax, if_yaw_angle=False, no_plotting_walls=False):
         # plot waypoints
         ax.scatter(self.waypoints[0,0], self.waypoints[0,1], s=100, c='k',  label="Start")
         ax.scatter(self.waypoints[-1,0], self.waypoints[-1,1], s=100, c='r', label="End")
@@ -492,20 +582,18 @@ class Path():
         ax.scatter(self.even_trajectory[:, 0], self.even_trajectory[:, 1], s=2, marker='.', label="Trajectory", rasterized=True)
         
         for idx, obs in enumerate(self.obstacles):
-            p_obst, r_obst = obs
+            p_obst, r_obst = self.obstacles_np[idx, :2], self.obstacles_np[idx, 2]
             circle = plt.Circle((p_obst[0], p_obst[1]), r_obst, color='r', alpha=0.5)
             ax.add_patch(circle)
             ax.text(p_obst[0], p_obst[1], idx+1, fontsize=12)
-        # Plot the trajectories
-        ax.scatter(self.wall_up[:, 0], self.wall_up[:, 1], s=2, marker='o', rasterized=True)
-        ax.scatter(self.wall_down[:, 0], self.wall_down[:, 1], s=2, marker='o', rasterized=True)
-
-        # plt.scatter(query_point[0], query_point[1], s=100, marker='x', label='Query Point')
-        # plt.scatter(trajectories[closest_trajectory_index][closest_point_index, 0], trajectories[closest_trajectory_index][closest_point_index, 1], s=100, marker='x', label='Closest Point')
-
-        ax.scatter(self.start_line[:, 0], self.start_line[:, 1], s=2, marker='.', rasterized=True)
-        ax.scatter(self.end_line[:, 0], self.end_line[:, 1], s=2, marker='.', rasterized=True)
-        
+        if not self.params.without_walls and not no_plotting_walls:
+            # ax.scatter(self.wall_up[:, 0], self.wall_up[:, 1], s=2, marker='o', rasterized=True)
+            # ax.scatter(self.wall_down[:, 0], self.wall_down[:, 1], s=2, marker='o', rasterized=True)
+            # plt.scatter(query_point[0], query_point[1], s=100, marker='x', label='Query Point')
+            # plt.scatter(trajectories[closest_trajectory_index][closest_point_index, 0], trajectories[closest_trajectory_index][closest_point_index, 1], s=100, marker='x', label='Closest Point')
+            # ax.scatter(self.start_line[:, 0], self.start_line[:, 1], s=2, marker='.', rasterized=True)
+            # ax.scatter(self.end_line[:, 0], self.end_line[:, 1], s=2, marker='.', rasterized=True)
+            ax.scatter(self.walls_stack[:, 0], self.walls_stack[:, 1], s=2, marker='.', rasterized=True)
         if self.plot_error:
             ax.scatter(self.query_point[0], self.query_point[1], s=10, marker='x', label='Query Point')
             ax.scatter(self.closest_point_to_trajectory[0], self.closest_point_to_trajectory[1], s=10, marker='o', label='Closest Point')
@@ -532,6 +620,7 @@ class Path():
         
     
     def print_shape(self):
+        print("Shape of the variables")
         print(f"shape of waypoints: {self.waypoints.shape}")
         print(f"shape of even_trajectory: {self.even_trajectory.shape}")
         print(f"length of the reference trajectory: {round(self.trajectory_length_at_each_point[-1], 3)} m")
@@ -540,7 +629,8 @@ class Path():
         print(f"shape of ghost_yaw_angles: {self.ghost_yaw_angles.shape}")
         print(f"shape of obstacles in ndarray format: {self.obstacles_np.shape}")
         print(f"number of obstacles: {len(self.obstacles)}")
-        print(f"shape of walls: {self.wall_up.shape}")
+        if not self.params.without_walls:
+            print(f"shape of walls: {self.wall_up.shape}")
         # print("")
     
     def reset(self):
@@ -548,7 +638,8 @@ class Path():
         self.ref_point_index = 0
         self.generate_path()
         self.generate_walls()
-        if self.is_crossed():
-            self.reset()
+        if not self.params.without_walls:
+            if self.is_crossed():
+                self.reset()
         # if self.is_waypoints_in_obstacles():
         #     self.reset()

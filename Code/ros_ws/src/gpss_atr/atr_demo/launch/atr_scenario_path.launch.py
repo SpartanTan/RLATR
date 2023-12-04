@@ -314,7 +314,6 @@ def generate_launch_description():
         emulate_tty=True,
     )
     ld.add_action(atr_path_generator_node)
-
     # ATR Path List subscriber (transforms the ATRPathList topic to MarkerArray to visualize it in Rviz)
 
     atr_path_subs_yaml = os.path.join(path_gen_dir, "config", "atr_path_list_subs.yaml")

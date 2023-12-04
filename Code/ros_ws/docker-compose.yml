@@ -1,18 +1,16 @@
 version: '3.5'
 
-x-common-variables: &common-variables
+x-common-environment: &common-environment
+  RMW_IMPLEMENTATION: rmw_cyclonedds_cpp
   ROS_DOMAIN_ID: 0
-  # RMW_IMPLEMENTATION: "rmw_cyclonedds_cpp"
-  # CYCLONEDDS_URI: "<General><AllowMulticast>spdp</><MaxMessageSize>65500B</></>"
 
 services:
   atr_interface:
     network_mode: host
-    build: ./src/gpss_interfaces
+    # build: ./src/gpss_interfaces
     image: gpss_interfaces:latest
     environment: 
-     - "RMW_IMPLEMENTATION=rmw_cyclonedds_cpp"
-     - "ROS_DOMAIN_ID=0"
+      <<: *common-environment
     restart: no
   
   factory_db:
@@ -22,11 +20,10 @@ services:
     depends_on: 
       - atr_interface
     environment: 
-     - "RMW_IMPLEMENTATION=rmw_cyclonedds_cpp"
-     - "ROS_DOMAIN_ID=0"
+      <<: *common-environment
     restart: no
 
-  gpss_atr_pipeling:
+  gpss_atr_pipeline:
     network_mode: host
     # image: factory_db:latest
     build: ./src/gpss_atr
@@ -44,8 +41,9 @@ services:
       - /tmp/.X11-unix:/tmp/.X11-unix
       - /dev/dri:/dev/dri
       - ./src/gpss_atr/atr_demo/config:/opt/ros/overlay_ws/install/share/atr_demo/config
+      - ./src/gpss_atr/atr_path_generator/config:/opt/ros/overlay_ws/install/share/atr_path_generator/config
     devices:
-      - /dev/dri:/dev/dri`
+      - /dev/dri:/dev/dri
     # command: ros2 launch atr_demo atr_driver_bringup.launch.py
     # command: ros2 launch atr_demo atr_scenario.launch.py joy_twist:=True joy_topic:=teleop_1
 
@@ -54,8 +52,8 @@ services:
     # image: gpss_atr:latest
     build: ./src/rl_atr
     depends_on: 
-      - gpss_atr_pipeling
-    image: rl_atr:latest
+      - gpss_atr_pipeline
+    # image: rl_atr:latest
     environment:
       - "DISPLAY=${DISPLAY}"
       - "ROS_DOMAIN_ID=0"
@@ -65,9 +63,13 @@ services:
     volumes:
       - /tmp/.X11-unix:/tmp/.X11-unix
       - /dev/dri:/dev/dri
+      - ./src/gpss_atr/atr_demo/config:/opt/ros/overlay_ws/install/share/atr_demo/config
+      - ./src/gpss_atr/atr_path_generator/config:/opt/ros/overlay_ws/install/share/atr_path_generator/config
     devices:
       - /dev/dri:/dev/dri`
-    # command: ros2 run atr_rl_testpublisher cmdPub
-    command: ros2 launch atr_launch atr_multi_spawn.launch.py
+    # command: ros2 run atr_rl_testpublisher cmdPub # this one only publishes commands
+    command: ros2 launch atr_launch atr_multi_spawn.launch.py # this one brings up the whole pipeline
+    # command: ros2 launch atr_demo atr_scenario_path.launch.py joy_twist:=True
+
 
 

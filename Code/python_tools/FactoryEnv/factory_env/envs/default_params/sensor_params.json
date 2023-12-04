@@ -1,0 +1,11 @@
+{
+    "distance_threshold": "0.8",
+    "sensor_angle": "240",
+    "nsectors": "10",
+    "num_points_on_walls": "5",
+    "num_points_on_obstacles": "5",
+    "narrow_angle": "60",
+    "angle_inbetween": "120",
+    "resolution": "6.0",
+    "Sr": "1.0"
+}

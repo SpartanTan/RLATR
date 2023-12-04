@@ -1,0 +1,22 @@
+{
+    "No": "8",
+    "Nw": "8",
+    "Lp": "6",
+    "mu_r": "0.25",
+    "sigma_d": "0.5",
+    "shift_distance": "1",
+    "extend_length": "2.0",
+    "look_ahead_distance": "0.0",
+    "target_finishing_time": "30",
+    "without_walls": "0",
+    "allowed_jump_index": "50",
+    "how_many_points_forward": "2",
+    "max_ep_steps": "1000",
+    "obs_mean_vel": "0.1",
+    "obs_std_vel": "0.05",
+    "flip_chance": "0.3",
+    "dynamic_obstacles_r": "0", 
+    "dynamic_obstacles": "0",
+    "static_map": "0",
+    "consider_width": "0"
+}

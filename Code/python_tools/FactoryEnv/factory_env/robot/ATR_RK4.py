@@ -10,7 +10,26 @@ class ATR_RK4():
         self.track_width = params.track_width
         self.state = init_state
         self.dt = params.dt
+    
+    def simulate_slip(self, wheel_speeds, slip_probability=0.1, max_speed=2):
+        """
+        Simulate wheel slipping based on a given probability.
         
+        :param wheel_speeds: Array of wheel speeds.
+        :param slip_probability: Probability of slipping occurring.
+        :param max_speed: Maximum allowed speed for the wheels.
+        :return: Adjusted wheel speeds.
+        """
+        # Apply slip based on the slip probability
+        if np.random.rand() < slip_probability:
+            # Simulate slip by setting wheel speeds to zero
+            wheel_speeds = np.array([0, 0])
+        else:
+            # No slip, optionally add some Gaussian noise
+            wheel_speeds += np.random.normal(-0.2, 0.1, size=2)
+
+        # Ensure wheel speeds are within the allowed range
+        return np.clip(wheel_speeds, -max_speed, max_speed)
         
     def robot_pose_derivative(self, state:np.ndarray, wheel_speeds:list):
         x, y, theta = state
@@ -47,6 +66,11 @@ class ATR_RK4():
         
         # switch wheel speed sequence
         wheel_speeds = [wheel_speeds[1], wheel_speeds[0]] # now wheel_speed is [wl, wr]
+        # Add noise to the wheel speeds
+        # wheel_speeds = np.clip(wheel_speeds + np.random.normal(-0.2, 0.1, size=2), -2, 2)
+        # left wheel with positive noise, right wheel with negative noise
+        # add random slip on the wheels
+        # self.simulate_slip(wheel_speeds)
         left_wheel_speed, right_wheel_speed = wheel_speeds
         self.linear_velocity = self.wheel_radius * (left_wheel_speed + right_wheel_speed) / 2
         self.angular_velocity = self.wheel_radius * \

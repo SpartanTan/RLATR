@@ -23,4 +23,4 @@ atr_factory_state:
     # JSON File name with the nodes and paths descriptions
     # The paths and nodes in this file are used to simulate the initial position of the ATRs. 
     # The nodes file description are allocated in the atr_path_generator package
-    nodes_filename: "nodes_RL.json"
+    nodes_filename: "nodes_tuve.json"

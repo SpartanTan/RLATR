@@ -4,7 +4,8 @@ ARG PACKAGE=gpss_atr
 
 WORKDIR $OVERLAY_WS/src
 ADD . $PACKAGE
-
+RUN pip install gymnasium 
+RUN pip3 install torch --index-url https://download.pytorch.org/whl/cpu
 WORKDIR $OVERLAY_WS
 RUN . /opt/ros/humble/setup.sh && \ 
     colcon build \

@@ -52,10 +52,16 @@ class RangeFinder():
     def __init__(self, sensor_param: sensor_param, robot_width):
         self.sensor_param = sensor_param
         self.walls = None
+        self.walls_list = None
         self.W = robot_width
+        self.env_type = None
 
-    def reset(self, walls):
-        self.walls = walls
+    def reset(self, walls, env_type:str='sim'):
+        self.env_type = env_type
+        if env_type == 'sim':
+            self.walls = walls
+        elif env_type == 'real':
+            self.walls_list = walls
 
     def all_intersections(self, robot_state, obstacles):
         """
@@ -86,6 +92,7 @@ class RangeFinder():
             intersection_found = False
 
             intersections_temp = []  # Temp list for intersections
+            # Intersections with obstcles
             for obstacle in obstacles:
                 # Calculate B, C, and discriminant for each obstacle
                 B = 2 * (np.cos(theta) * (x1 - obstacle[0]) + np.sin(theta) * (y1 - obstacle[1]))
@@ -102,25 +109,26 @@ class RangeFinder():
                     y3 = y1 + t2 * np.sin(theta)
                     intersections_temp += [(x2, y2, t1), (x3, y3, t2)]
             
-            # Calculate intersection with walls
-            x_end = x1 + self.sensor_param.Sr * np.cos(theta)
-            y_end = y1 + self.sensor_param.Sr * np.sin(theta)
-            beam = LineString([(x1, y1), (x_end, y_end)])
-            intersection = self.walls.intersection(beam)
+            # Intersection with walls
+            if self.walls is not None:
+                x_end = x1 + self.sensor_param.Sr * np.cos(theta)
+                y_end = y1 + self.sensor_param.Sr * np.sin(theta)
+                beam = LineString([(x1, y1), (x_end, y_end)])
+                intersection = self.walls.intersection(beam)
+                
+                if intersection.is_empty:
+                    pass  # No intersection
+                elif intersection.geom_type == 'Point':
+                        t_wall = ((intersection.x - x1)**2 + (intersection.y - y1)**2)**0.5
+                        intersections_temp.append((intersection.x, intersection.y, t_wall))
+                elif intersection.geom_type == 'MultiPoint':
+                    for point in intersection.geoms:
+                        t_wall = ((point.x - x1)**2 + (point.y - y1)**2)**0.5
+                        intersections_temp.append((point.x, point.y, t_wall))
             
-            if intersection.is_empty:
-                pass  # No intersection
-            elif intersection.geom_type == 'Point':
-                    t_wall = ((intersection.x - x1)**2 + (intersection.y - y1)**2)**0.5
-                    intersections_temp.append((intersection.x, intersection.y, t_wall))
-            elif intersection.geom_type == 'MultiPoint':
-                for point in intersection.geoms:
-                    t_wall = ((point.x - x1)**2 + (point.y - y1)**2)**0.5
-                    intersections_temp.append((point.x, point.y, t_wall))
-                    
+            # Extract valid instersections       
             # Sort by t value so that we first check the intersection closer to the sensor
-            intersections_temp.sort(key=lambda x: x[2])
-
+            intersections_temp.sort(key=lambda x: x[2]) 
             for (x, y, t) in intersections_temp:
                 # Check if the intersection is in the direction of the beam and within max range
                 if theta >= -np.pi/2 and theta <= np.pi/2:  # Forward direction is positive x
@@ -137,7 +145,8 @@ class RangeFinder():
                         obstacles_obs.append([t, theta - yaw_of_robot, theta])
                         intersection_found = True
                         break
-
+            
+            # Fill in a fake measurement
             if not intersection_found:
                 measurements.append((theta, self.sensor_param.Sr))
                 obstacles_obs.append([self.sensor_param.Sr, theta - yaw_of_robot, theta])
@@ -151,53 +160,77 @@ class RangeFinder():
         measurements = []
         obstacles_obs = []
 
-        obstacles = np.array(obstacles)
-        obstacle_x = obstacles[:, 0]
-        obstacle_y = obstacles[:, 1]
-        obstacle_r = obstacles[:, 2]
+        # Intersections with obstcles
+        if obstacles.any():
+            obstacles = np.array(obstacles)
+            obstacle_x = obstacles[:, 0]
+            obstacle_y = obstacles[:, 1]
+            obstacle_r = obstacles[:, 2]
 
         for i, theta in enumerate(beam_angles):
             cos_theta = np.cos(theta)
             sin_theta = np.sin(theta)
-
-            dx = x1 - obstacle_x
-            dy = y1 - obstacle_y
-
-            B = 2 * (cos_theta * dx + sin_theta * dy)
-            C = dx**2 + dy**2 - obstacle_r**2
-            discriminant = B**2 - 4*C
-
             intersections_temp = []
-            valid_intersections = discriminant >= 0
-            if valid_intersections.any():
-                t1 = (-B - np.sqrt(discriminant)) / 2
-                t2 = (-B + np.sqrt(discriminant)) / 2
 
-                t_values = np.where(t1 < t2, t1, t2)  # Pick the smaller t value for each intersection
+            if obstacles.any():
+                dx = x1 - obstacle_x
+                dy = y1 - obstacle_y
 
-                valid_t_values = (t_values >= 0) & (t_values <= self.sensor_param.Sr)
+                B = 2 * (cos_theta * dx + sin_theta * dy)
+                C = dx**2 + dy**2 - obstacle_r**2
+                discriminant = B**2 - 4*C
 
-                x_intersections = x1 + t_values * cos_theta
-                y_intersections = y1 + t_values * sin_theta
+                
+                valid_intersections = discriminant >= 0
+                if valid_intersections.any():
+                    t1 = (-B - np.sqrt(discriminant)) / 2
+                    t2 = (-B + np.sqrt(discriminant)) / 2
 
-                intersections_temp.extend([(x, y, t) for x, y, t in zip(x_intersections[valid_intersections & valid_t_values], y_intersections[valid_intersections & valid_t_values], t_values[valid_intersections & valid_t_values])])
+                    t_values = np.where(t1 < t2, t1, t2)  # Pick the smaller t value for each intersection
 
-            x_end = x1 + self.sensor_param.Sr * cos_theta
-            y_end = y1 + self.sensor_param.Sr * sin_theta
-            beam = LineString([(x1, y1), (x_end, y_end)])
-            intersection = self.walls.intersection(beam)
+                    valid_t_values = (t_values >= 0) & (t_values <= self.sensor_param.Sr)
 
-            if not intersection.is_empty:
-                if intersection.geom_type == 'Point':
-                    t_wall = ((intersection.x - x1)**2 + (intersection.y - y1)**2)**0.5
-                    if t_wall <= self.sensor_param.Sr:
-                        intersections_temp.append((intersection.x, intersection.y, t_wall))
-                elif intersection.geom_type == 'MultiPoint':
-                    for point in intersection.geoms:
-                        t_wall = ((point.x - x1)**2 + (point.y - y1)**2)**0.5
-                        if t_wall <= self.sensor_param.Sr:
-                            intersections_temp.append((point.x, point.y, t_wall))
+                    x_intersections = x1 + t_values * cos_theta
+                    y_intersections = y1 + t_values * sin_theta
 
+                    intersections_temp.extend([(x, y, t) for x, y, t in zip(x_intersections[valid_intersections & valid_t_values], y_intersections[valid_intersections & valid_t_values], t_values[valid_intersections & valid_t_values])])
+            
+            if self.env_type == 'sim':
+                # Intersection with walls
+                if self.walls is not None:
+                    x_end = x1 + self.sensor_param.Sr * cos_theta
+                    y_end = y1 + self.sensor_param.Sr * sin_theta
+                    beam = LineString([(x1, y1), (x_end, y_end)])
+                    intersection = self.walls.intersection(beam)
+                    if not intersection.is_empty:
+                        if intersection.geom_type == 'Point':
+                            t_wall = ((intersection.x - x1)**2 + (intersection.y - y1)**2)**0.5
+                            if t_wall <= self.sensor_param.Sr:
+                                intersections_temp.append((intersection.x, intersection.y, t_wall))
+                        elif intersection.geom_type == 'MultiPoint':
+                            for point in intersection.geoms:
+                                t_wall = ((point.x - x1)**2 + (point.y - y1)**2)**0.5
+                                if t_wall <= self.sensor_param.Sr:
+                                    intersections_temp.append((point.x, point.y, t_wall))
+            elif self.env_type == 'real':
+                x_end = x1 + self.sensor_param.Sr * cos_theta
+                y_end = y1 + self.sensor_param.Sr * sin_theta
+                beam = LineString([(x1, y1), (x_end, y_end)])
+                for wall in self.walls_list:  # Iterate over each LinearRing in the list
+                    intersection = wall.intersection(beam)
+                    if not intersection.is_empty:
+                        # The rest of your intersection handling code remains the same
+                        if intersection.geom_type == 'Point':
+                            t_wall = ((intersection.x - x1)**2 + (intersection.y - y1)**2)**0.5
+                            if t_wall <= self.sensor_param.Sr:
+                                intersections_temp.append((intersection.x, intersection.y, t_wall))
+                        elif intersection.geom_type == 'MultiPoint':
+                            for point in intersection.geoms:
+                                t_wall = ((point.x - x1)**2 + (point.y - y1)**2)**0.5
+                                if t_wall <= self.sensor_param.Sr:
+                                    intersections_temp.append((point.x, point.y, t_wall))
+            
+            # Extract valid instersections       
             if intersections_temp:
                 intersections_temp.sort(key=lambda x: x[2])
                 x, y, t = intersections_temp[0]
@@ -206,8 +239,8 @@ class RangeFinder():
                 obstacles_obs.append([t, theta - yaw_of_robot, theta])
 
             else:
-                measurements.append((theta, 1.0))
-                obstacles_obs.append([self.sensor_param.Sr, theta - yaw_of_robot, theta])
+                measurements.append((theta, np.inf))
+                # obstacles_obs.append([self.sensor_param.Sr, theta - yaw_of_robot, theta])
 
         return intersections, measurements, obstacles_obs
 
@@ -286,7 +319,7 @@ class RangeFinder():
         """
         mes = np.array(distances)
         first_distance = mes[0]
-        rest_distances = mes[1:].reshape(20, -1)
+        rest_distances = mes[1:].reshape(self.sensor_param.nsectors, -1)
         rest_distances_list = rest_distances.tolist()
         rest_distances_list[0].insert(0, first_distance)
         mes = rest_distances_list
@@ -317,6 +350,5 @@ class RangeFinder():
             tmp = self.feasibility_pooling(x)
             fb_results.append(tmp)
             closeness.append(1.0 - 1.0/self.sensor_param.Sr * tmp)
-        # for i in measurements_:
-        #     print(i)
-        return intersections_, obstacles_obs_,  measurements_, fb_results, closeness
+        closeness = np.nan_to_num(closeness, nan=0.0, posinf=0.0, neginf=0.0)
+        return intersections_, np.array(obstacles_obs_),  measurements_, fb_results, closeness

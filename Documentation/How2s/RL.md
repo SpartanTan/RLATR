@@ -29,3 +29,7 @@ Thus you need to install the FactoryENV package first.
 Benchmark is for testing how long the reference ATR should take to finish a task. It will print the total steps and total time used.
 Assume the length of the reference path is 6m, the maximum linear veloccity of ATR is 0.2m/s. The discrete time step is 0.1s.
 Time needed: $t = 6/0.2=30s$. Steps needed: $T = 30/0.1=300$
+
+
+### Install dependencies
+```pip install -r requirements.txt```

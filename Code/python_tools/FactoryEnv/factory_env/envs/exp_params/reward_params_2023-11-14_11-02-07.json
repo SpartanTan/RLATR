@@ -1,0 +1,14 @@
+{
+    "alpha_lambda": "1.0",
+    "beta_lambda": "2.0",
+    "gamma_theta": "4.0",
+    "gamma_x": "0.1",
+    "gamma_e": "0.5",
+    "alpha_r": "0.1",
+    "r_collision": "-20000",
+    "r_arrived": "20000",
+    "r_terminated": "-20000",
+    "max_total_reward": "10000",
+    "lagging_frac": "10",
+    "r_oa_frac": "10"
+}

@@ -1,3 +1,4 @@
+gymnasium
 sympy
 tqdm
 seaborn
@@ -12,3 +13,5 @@ shapely
 scipy
 keyboard
 tensorboard
+numba
+pyqt5

@@ -1,10 +1,12 @@
 import rclpy
 from rclpy.node import Node
-
+import numpy as np
 from std_msgs.msg import String
 from atr_state_msgs.msg import ATRJointCommand
 
-
+import gymnasium as gym
+import torch
+import torch.nn as nn
 
 class MinimalPublisher(Node):
 
@@ -17,9 +19,12 @@ class MinimalPublisher(Node):
 
     def timer_callback(self):
         msg = ATRJointCommand()
-        msg.wheel_velocity = [1.0, 2.0] # [wr, wl]
+        random_values = 0.0 * torch.rand(2)
+        random_values_list = random_values.tolist()
+        msg.wheel_velocity = random_values_list # [wr, wl]
         self.publisher_.publish(msg)
         self.get_logger().info('Publishing: "%s"' % msg.wheel_velocity)
+        self.get_logger().info('TESTINGG')
         self.i += 1
 
 

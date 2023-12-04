@@ -31,7 +31,7 @@ atr_path_generator:
     use_sim_time: false
 
     # JSON File name with the nodes and paths descriptions
-    nodes_filename: "nodes_RL.json"
+    nodes_filename: "nodes_tuve.json" # nodes_tuve nodes_RL
 
     # Service name to receive the job description
     job_list_service_name: "update_atr_job_list"

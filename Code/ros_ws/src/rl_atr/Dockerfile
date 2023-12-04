@@ -7,7 +7,6 @@ ADD . $PACKAGE
 
 WORKDIR $OVERLAY_WS
 RUN apt-get install -y ros-humble-rmw-cyclonedds-cpp
-RUN pip install gymnasium
 RUN . /opt/ros/humble/setup.sh && \ 
     colcon build \
     --symlink-install \

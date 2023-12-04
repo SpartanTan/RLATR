@@ -1,11 +1,10 @@
 import gymnasium
-from factory_env.envs.parameters import env_param
 import matplotlib.pyplot as plt
 import argparse
-import pkg_resources
 import subprocess
 import os
 import time
+from importlib.metadata import distribution
 
 def strtobool(val):
     """
@@ -26,9 +25,9 @@ def strtobool(val):
 def is_package_installed(package_name):
     # Check if package is installed
     try:
-        pkg_resources.get_distribution(package_name)
+        distribution(package_name)
         return True
-    except pkg_resources.DistributionNotFound:
+    except:
         return False
     
 def parse_args():
@@ -56,7 +55,8 @@ if __name__ == "__main__":
                 print(f"Failed to install {package_name}.")
         else:
             print("You've selected not to install the package. Check the box if you want to do so.") 
-
+    
+    from factory_env.envs.parameters import env_param
     params = env_param()
     env = gymnasium.make("training-factory-v0", params=params, render_mode="rgb_array")
     print("Environment is installed. You shall see the plot.")

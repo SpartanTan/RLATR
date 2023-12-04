@@ -61,7 +61,7 @@ $J=\begin{bmatrix}
 However in the controller, we receive the desired Twist velocity, which is the $\dot{X}$ here, thus we need to have a inversed $J$, $J^{\#}$. Notice that the $J$ is not a square matrix, thus we need to caculate its pseudo-inverse.
 
 The method to calculate a pseudo-inverse is 
-$A^{\dag}=(A^TA^{-1})A^T$. Using matlab symbolic toolbox, we can compose the J-inverse as
+$A^{\dag}=(A^TA)^{-1}A^T$. Using matlab symbolic toolbox, we can compose the J-inverse as
 
 $J^{\#}=\begin{bmatrix}
             \frac{C}{R} & \frac{S}{R} & \frac{L}{2R} \\

@@ -1,0 +1,18 @@
+{
+    "alpha_lambda": "1.0",
+    "beta_lambda": "2.0",
+    "gamma_theta": "10.0",
+    "gamma_x": "0.3",
+    "epsilon_x": "0.1",
+    "gamma_e": "3.0",
+    "alpha_r": "0.5",
+    "r_collision": "-500",
+    "r_arrived": "200",
+    "r_terminated": "-200",
+    "max_total_reward": "5000",
+    "lagging_frac": "3",
+    "r_oa_frac": "5",
+    "angle_resolution": "0.1",
+    "distance_resolution": "0.05",
+    "oa_result_resolution": "0.3"
+}

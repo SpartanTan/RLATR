@@ -45,11 +45,77 @@ def parse_args():
     parser.add_argument('--max-grad-norm', type=float, default=0.5, help="the maximum norm for the gradient clipping")
     parser.add_argument('--target-kl', type=float, default=None, help="the target KL divergence threashold")
     
+    # Environment parameters
+    parser.add_argument('--which_test', type=int, default=0, help='Which test to perform? 0: manual, 1: benchmark, 2: test agent')
+    parser.add_argument('--which_option', type=int, default=0, help='Which test to perform? 0: run, 1: save, 2: load')
+    parser.add_argument('--No', type=int, default=8, help='Description for No')
+    parser.add_argument('--Nw', type=int, default=8, help='Description for Nw')
+    parser.add_argument('--Lp', type=int, default=6, help='Description for Lp')
+    parser.add_argument('--mu_r', type=float, default=0.25, help='Description for mu_r')
+    parser.add_argument('--sigma_d', type=float, default=0.5, help='Description for sigma_d')
+    parser.add_argument('--shift_distance', type=int, default=1, help='Description for shift_distance')
+    parser.add_argument('--extend_length', type=float, default=2.0, help='Description for extend_length')
+    parser.add_argument('--look_ahead_distance', type=float, default=0.5, help='Description for look_ahead_distance')
+    parser.add_argument('--target_finishing_time', type=int, default=30, help='Description for target_finishing_time')
+    parser.add_argument('--without_walls', type=lambda x:bool(strtobool(x)), default=False, nargs='?', const=True, help='toggle')
+    parser.add_argument('--allowed_jump_index', type=int, default=5, help='number of points the robot can jump on the path')
+    parser.add_argument('--how_many_points_forward', type=int, default=2, help='Description for how_many_points_forward')
+    parser.add_argument('--max_ep_steps', type=int, default=500, help='Description for max_ep_steps')
+    parser.add_argument('--obs_mean_vel', type=float, default=0.1, help='mean velocity of the obstacles')
+    parser.add_argument('--obs_std_vel', type=float, default=0.1, help='standard deviation of the velocity of the obstacles')
+    parser.add_argument('--flip_chance', type=float, default=0.3, help='The chace to flip the direction of obstacles')
+    parser.add_argument('--dynamic_obstacles_r', type=lambda x:bool(strtobool(x)), default=False, nargs='?', const=True, help='toggle the raidus of the obstacles')
+    parser.add_argument('--dynamic_obstacles', type=lambda x:bool(strtobool(x)), default=False, nargs='?', const=True, help='toggle the movement of the obstacles')
+    parser.add_argument('--static_map', type=int, default=0, help='0: run, 1: save, 2: load')
+    parser.add_argument('--consider_width', type=int, default=0, help='whether to consider width in calculations (0 or 1)')
+
+    parser.add_argument('--dt', type=float, default=0.1, help='time step')
+    parser.add_argument('--wheel_radius', type=float, default=0.125, help='Description for wheel_radius')
+    parser.add_argument('--track_width', type=float, default=0.48, help='Description for track_width')
+    parser.add_argument('--atr_linear_vel_max', type=float, default=0.2, help='Description for atr_linear_vel_max')
+    
+
+    parser.add_argument('--full_plot', type=lambda x:bool(strtobool(x)), default=False, nargs='?', const=True, help='toggle')
+    parser.add_argument('--rangefinder', type=lambda x:bool(strtobool(x)), default=False, nargs='?', const=True, help='toggle')
+    
+    parser.add_argument('--distance_threshold', type=float, default=0.8, help='Description for distance_threshold')
+    parser.add_argument('--sensor_angle', type=int, default=240, help='Description for sensor_angle')
+    parser.add_argument('--nsectors', type=int, default=20, help='Description for nsectors')
+    parser.add_argument('--num_points_on_walls', type=int, default=5, help='Description for num_points_on_walls')
+    parser.add_argument('--num_points_on_obstacles', type=int, default=5, help='Description for num_points_on_obstacles')
+    parser.add_argument('--narrow_angle', type=float, default=60.0, help='Description for narrow_angle')
+    parser.add_argument('--angle_inbetween', type=float, default=120.0, help='Description for angle_inbetween')
+    parser.add_argument('--resolution', type=float, default=6.0, help='Description for resolution')
+    parser.add_argument('--Sr', type=float, default=1.0, help='Description for Sr')
+
+    parser.add_argument('--alpha_lambda', type=float, default=1.0, help='trade-off paramter')
+    parser.add_argument('--beta_lambda', type=float, default=2.0, help='trade-off paramter')
+    parser.add_argument('--gamma_theta', type=float, default=4.0, help='obstacle avoidance reward parameter')
+    parser.add_argument('--gamma_x', type=float, default=0.1, help='obstacle avoidance reward parameter') 
+    parser.add_argument('--epsilon_x', type=float, default=0.1, help='deadzone distance of obstacle avoidance reward') 
+    parser.add_argument('--gamma_e', type=float, default=0.5, help='path following reward parameter')
+    parser.add_argument('--alpha_r', type=float, default=0.1, help='existance reward parameter')
+    parser.add_argument('--r_collision', type=float, default=-20000, help='Description for r_collision')
+    parser.add_argument('--r_arrived', type=float, default=20000, help='Description for r_arrived')
+    parser.add_argument('--r_terminated', type=float, default=-20000, help='Description for r_terminated')
+    parser.add_argument('--max_total_reward', type=float, default=10000, help='Description for max_total_reward')
+    parser.add_argument('--lagging_frac', type=float, default=3, help='Description for lagging_frac')
+    parser.add_argument('--r_oa_frac', type=float, default=5, help='Description for r_oa_frac')
+    parser.add_argument('--angle_resolution', type=float, default=0.1, help='step size for the angle in oa')
+    parser.add_argument('--distance_resolution', type=float, default=0.05, help='step size for the distance in oa')
+    parser.add_argument('--oa_result_resolution', type=float, default=0.3, help='step size for the result in oa')
+
     args = parser.parse_args()
     args.batch_size = int(args.num_envs * args.num_steps) # 4 * 300 = 1200
     args.minibatch_size = int(args.batch_size // args.num_minibatches) # 1200 // 6 = 200
 
     return args
+
+def print_args(args):
+    print("***Experiment Parameters***")
+    for arg in vars(args):
+        print(f'{arg}: {getattr(args, arg)}')
+    
 
 class TimerThread(threading.Thread):
     def __init__(self):
@@ -128,19 +194,6 @@ def log_params(env_params_instance, writer):
                 # "|param|value|\n|-|-|\n%s" %("\n".join([f"|{sub_key}|{sub_value}|" for sub_key, sub_value in vars(value).items() if sub_key == "distance_threshold" or "sensor_angle" or "nsectors" or "num_points_on_walls" or "num_points_on_obstacles"])),
                 "|param|value|\n|-|-|\n%s" %("\n".join([f"|{sub_key}|{sub_value}|" for sub_key, sub_value in vars(value).items() if isinstance(sub_value, (int, float)) ])),
             )
-    
-def check_param(params: env_param):
-    params.full_plot = True
-    print(f"Environment setup: \n\
-            Path length: {params.path_param.Lp} m\n\
-            Number of obstacles: {params.path_param.Nw}\n\
-            ATR max velocity: {params.atr_param.atr_linear_vel_max} m/s\n\
-            ATR max wheel speed: {params.atr_param.atr_w_max} rad/s\n\
-            target finishing time: {params.path_param.target_finishing_time} s\n\
-            step time: {params.atr_param.dt} s\n\
-            ")
-    assert params.path_param.target_finishing_time >= params.path_param.Lp / params.atr_param.atr_linear_vel_max, "The target finishing time is too short."
-
 
 def make_env(gym_id, params, seed, idx, capture_video, run_name):
     def thunk():
@@ -280,8 +333,11 @@ if __name__ == "__main__":
     timer.start()
     
     args = parse_args()
+    print_args(args)
     params = env_param()
-    check_param(params)
+    params.load_arguments(args)
+    params.check_param()
+
     
     run_name = f"{args.gym_id}_{args.exp_name}_{args.seed}_{int(time.time())}"
     
@@ -323,8 +379,8 @@ if __name__ == "__main__":
                                            
  
     """
-    random.seed(args.seed)
-    np.random.seed(args.seed)
+    # random.seed(args.seed)
+    # np.random.seed(args.seed)
     torch.manual_seed(args.seed)
     torch.backends.cudnn.deterministic=args.torch_deterministic
     device = torch.device("cuda" if torch.cuda.is_available() and args.cuda else "cpu")
@@ -381,11 +437,17 @@ if __name__ == "__main__":
  
     """
     
-    envs = gym.vector.SyncVectorEnv([make_env(args.gym_id, params, args.seed, i, args.capture_video, run_name) for i in range(args.num_envs)])
+    envs = gym.vector.AsyncVectorEnv([make_env(args.gym_id, params, args.seed, i, args.capture_video, run_name) for i in range(args.num_envs)])
+    # envs = gym.vector.SyncVectorEnv([make_env(args.gym_id, params, args.seed, i, args.capture_video, run_name) for i in range(args.num_envs)])
     assert isinstance(envs.single_observation_space, gym.spaces.Box), "only continuous action space is supported"
     
     agent:Agent = Agent().to(device)
-    # agent.load_state_dict(torch.load("agents/training-factory-v0_PPO_1_1688932490.pth"))
+    # agent.load_state_dict(torch.load("good_agents/0wall0obs_356.pth"))
+    # agent.load_state_dict(torch.load("good_agents/0wall1obs10sec_824.pth"))
+    agent.load_state_dict(torch.load("good_agents/0walls2obs10sec_6128.pth"))
+    
+    # agent.load_state_dict(torch.load("agents/training-factory-v0_PPO_2_1701541773.pth"))
+
     optimizer = optim.Adam(agent.parameters(), lr=args.learning_rate, eps=1e-5)
     obs = torch.zeros((args.num_steps, args.num_envs) + envs.single_observation_space.shape).to(device)   # [n_steps, n_envs, n_obs]
     actions = torch.zeros((args.num_steps, args.num_envs) + envs.single_action_space.shape).to(device)    # [n_steps, n_envs, n_actions]
@@ -401,7 +463,6 @@ if __name__ == "__main__":
     next_obs = torch.Tensor(observation).to(device) # [4, 26], 4 env, 26 obs
     next_done = torch.zeros(args.num_envs).to(device)
     num_updates = args.total_timesteps // args.batch_size
-    
     print_training_info(args, envs, agent, next_obs)
     
     for update in range(1, num_updates + 1):
@@ -436,7 +497,6 @@ if __name__ == "__main__":
                 print(f"global_step={global_step}, episodic_return: {ep_r}")
                 writer.add_scalar("charts/episodic_return", np.mean(ep_r), global_step)
                 writer.add_scalar("charts/episodic_length", np.mean(ep_l), global_step)
-        
         with torch.no_grad():
             # This is the value for the observation after last step. V(300)
             # The next_obs here won't be stored in obs array, neither this next_value
@@ -471,7 +531,6 @@ if __name__ == "__main__":
                         next_return = returns[t+1]
                     returns[t] = rewards[t] + args.gamma * nextnonterminal * next_return # regular return: sum of discounted rewards
                 advantages = returns - values  # Q-V
-                
         # flatten the batch
         b_obs = obs.reshape(-1, *obs.shape[2:]) # [300,4, 26] -> [1200, 26]. 
         b_logprobs = logprobs.reshape(-1) # [1200]
@@ -536,7 +595,6 @@ if __name__ == "__main__":
                 # Entropy loss
                 entropy_loss = entropy.mean()
                 loss = pg_loss + args.vf_coef * v_loss - args.ent_coef * entropy_loss 
-
                 # Optimize 
                 optimizer.zero_grad()
                 loss.backward()
@@ -547,7 +605,6 @@ if __name__ == "__main__":
             if args.target_kl is not None:
                 if approx_kl > args.target_kl:
                     break
-                
         y_pred, y_true = b_values.cpu().numpy(), b_returns.cpu().numpy()
         var_y = np.var(y_true)
         explained_var = np.nan if var_y == 0 else 1 - np.var(y_true - y_pred) / var_y # tells if value function is a good indicator of the returns
@@ -563,7 +620,11 @@ if __name__ == "__main__":
         print("SPS:", int(global_step / (time.time() - start_time)))
         print(f"Time spent so far: {int((time.time() - start_time) // 60)} miniutes, {int((time.time() - start_time) % 60)} seconds")
         writer.add_scalar("charts/SPS", int(global_step / (time.time() - start_time)), global_step)
+        print(f"update={update}")
     
+    if not os.path.exists("agents"):
+        # If it doesn't exist, create it
+        os.makedirs("agents")
     torch.save(agent.state_dict(), f"agents/{run_name}.pth")
     print(f"Training time: {int((time.time() - start_time) // 60)} miniutes, {int((time.time() - start_time) % 60)} seconds")
     print(f"NN parameters saved to agents/{run_name}.pth")

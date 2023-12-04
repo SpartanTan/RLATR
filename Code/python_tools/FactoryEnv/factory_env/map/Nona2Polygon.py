@@ -1,5 +1,5 @@
 import json
-from shapely.geometry import Point, Polygon, MultiLineString
+from shapely.geometry import Point, Polygon, MultiLineString, LinearRing
 from shapely.ops import nearest_points
 
 import numpy as np
@@ -28,8 +28,17 @@ class Nona2Polygon():
         self.safe_distance_to_wall = safe_distance_to_wall
         self.current_nearest_point = None
         self.danger = False
-        
-    def check_if_collision(self, query_point:np.ndarray):
+
+        # Process the polygons
+        self.walls = []
+        for polygon in data['polygons']:
+            # Convert to numpy array and ignore z-coordinate
+            xy_coords = np.array(polygon)[:, :2]
+            # Create LinearRing
+            wall = LinearRing(xy_coords)
+            self.walls.append(wall)
+
+    def if_collision(self, query_point:np.ndarray):
         """
         Check if a point is whith the non-accessible area
         Return true if it is.
@@ -70,7 +79,7 @@ class Nona2Polygon():
         for polygon in self.polygons:
             x, y = polygon.exterior.xy
             ax.plot(x, y, 'k-') # change 'k-' to any other color, linestyle
-            ax.fill(x, y, alpha=0.3) # change alpha to control the transparency
+            ax.fill(x, y, alpha=0.3) # change alpha to control the transparency        
         if self.danger:
             ax.scatter(self.current_nearest_point[0], self.current_nearest_point[1], color='blue', marker='x', s=50)
             ax.text(self.current_nearest_point[0]+0.2, self.current_nearest_point[1], f'{self.current_nearest_distance}', fontsize=8)
